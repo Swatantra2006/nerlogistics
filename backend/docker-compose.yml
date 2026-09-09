@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend Service
+  api:
+    build: .
+    container_name: ner_logistics_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://ner_user:ner_password@postgres:5432/ner_logistics
+      - ENVIRONMENT=production
+      - HOST=0.0.0.0
+      - PORT=8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # PostgreSQL + PostGIS Database
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: ner_logistics_db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=ner_user
+      - POSTGRES_PASSWORD=ner_password
+      - POSTGRES_DB=ner_logistics
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ner_user -d ner_logistics"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

@@ -1,0 +1,2 @@
+# Optional PostgreSQL / PostGIS driver (modern psycopg v3 with pre-built binary wheels)
+psycopg[binary]>=3.1.0

@@ -7,17 +7,18 @@ import { CopilotMessage } from '@/types';
 import api from '@/lib/api';
 
 const suggestedQueries = [
+  'What is the route between Dibrugarh and Anini?',
   'Where are the moving freight trucks right now?',
-  'Are there any active landslides or road blocks today?',
-  'What is the safest route from Guwahati to Tawang?',
-  'What is the logistics status of Meghalaya?',
-  'Which districts currently have the worst accessibility?',
-  'What happens if NH-10 is blocked by a landslide?',
-  'How to ship Assam tea efficiently using multimodal routes?',
-  'Which areas should receive new logistics hubs?',
+  'What is the route from Guwahati to Silchar?',
+  'How can I reach Tawang from Guwahati?',
+  'What are the risks between Dibrugarh and Anini?',
+  'Which route is better from Imphal to Kohima?',
+  'How accessible is Aizawl?',
+  'What logistics hubs are near Guwahati?',
 ];
 
 const mobileQuickPrompts = [
+  '🗺️ Route: Dibrugarh → Anini',
   '🚚 Live Moving Trucks',
   '⚠️ Active Landslide Alerts',
   '🗺️ Route: Guwahati → Tawang',
@@ -29,12 +30,12 @@ export default function CopilotPage() {
   const [messages, setMessages] = useState<CopilotMessage[]>([
     {
       role: 'assistant',
-      content: `Welcome to the **NER Logistics AI Copilot** 🧠\n\nI am your **real-time intelligent assistant** for freight, supply chain, and risk intelligence across India's 8 North Eastern States.\n\nI have direct access to **live GPS truck telemetry**, **real-time hazard and weather alerts**, and analytical data from 5 AI/ML engines across 24+ districts.\n\nAsk me anything in natural language, configure your Gemini API Key in the top right, or tap one of the suggested real-time queries below!`,
+      content: `Welcome to the **NER Logistics AI Copilot** 🧠\n\nI am your **real-time intelligent assistant** for freight, supply chain, and risk intelligence across India's 8 North Eastern States.\n\nI provide **grounded, multi-criteria route optimization**, **live GPS truck telemetry**, and analytical data across all 8 states.\n\nAsk me any route or logistics question in natural language (e.g. *"What is the route between Dibrugarh and Anini?"*), or tap one of the suggested queries below!`,
       timestamp: new Date().toISOString(),
       recommendations: [
+        'Try asking: "What is the route between Dibrugarh and Anini?"',
         'Try asking: "Where are the moving freight trucks right now?"',
-        'Try asking: "Are there any active road disruptions today?"',
-        'Try asking: "What is the safest route from Guwahati to Tawang?"',
+        'Try asking: "What is the safest route from Guwahati to Silchar?"',
       ],
     },
   ]);
@@ -97,14 +98,21 @@ export default function CopilotPage() {
       content: q,
       timestamp: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput('');
     setIsProcessing(true);
+
+    // Extract recent conversation history (last 4 turns) for context preservation
+    const conversationHistory = updatedMessages.slice(-4).map(m => ({
+      role: m.role,
+      content: m.content,
+    }));
 
     let response: CopilotMessage;
     try {
       // Connect to Serverless Route / FastAPI backend with live telemetry and optional custom API key
-      response = await api.askCopilot(q, activeApiKey || undefined);
+      response = await api.askCopilot(q, activeApiKey || undefined, conversationHistory);
     } catch (err) {
       console.warn('Backend copilot query failed, using rich local engine fallback:', err);
       // Fallback to local real-time engine

@@ -35,7 +35,10 @@ export const districts: District[] = [
   { id: 'west-kameng', name: 'West Kameng', stateId: 'arunachal', lat: 27.2340, lng: 92.3640, population: 87013, area: 7422, accessibilityScore: 28, riskScore: 78, roadConnectivity: 32, railConnectivity: 0, airportAccess: 12, nearestHub: 'guwahati-hub', nearestHubDistance: 420, avgDeliveryTime: 42, avgTravelTime: 15, lastMileDifficulty: 'very-high', infrastructureQuality: 28, demandLevel: 30, elevation: 1800, terrain: 'mountainous' },
   { id: 'east-siang', name: 'East Siang', stateId: 'arunachal', lat: 28.0690, lng: 95.3350, population: 99214, area: 4005, accessibilityScore: 32, riskScore: 70, roadConnectivity: 38, railConnectivity: 5, airportAccess: 20, nearestHub: 'dibrugarh-hub', nearestHubDistance: 280, avgDeliveryTime: 36, avgTravelTime: 14, lastMileDifficulty: 'very-high', infrastructureQuality: 30, demandLevel: 28, elevation: 420, terrain: 'hilly' },
   { id: 'changlang', name: 'Changlang', stateId: 'arunachal', lat: 27.1200, lng: 95.7400, population: 148226, area: 4662, accessibilityScore: 25, riskScore: 75, roadConnectivity: 30, railConnectivity: 8, airportAccess: 15, nearestHub: 'dibrugarh-hub', nearestHubDistance: 320, avgDeliveryTime: 40, avgTravelTime: 16, lastMileDifficulty: 'very-high', infrastructureQuality: 22, demandLevel: 32, elevation: 600, terrain: 'hilly' },
-  { id: 'lower-subansiri', name: 'Lower Subansiri', stateId: 'arunachal', lat: 27.6000, lng: 93.8000, population: 83030, area: 3460, accessibilityScore: 30, riskScore: 72, roadConnectivity: 35, railConnectivity: 0, airportAccess: 18, nearestHub: 'guwahati-hub', nearestHubDistance: 400, avgDeliveryTime: 38, avgTravelTime: 14, lastMileDifficulty: 'very-high', infrastructureQuality: 26, demandLevel: 25, elevation: 1200, terrain: 'mountainous' },
+  { id: 'lower-subansiri', name: 'Lower Subansiri (Ziro)', stateId: 'arunachal', lat: 27.6000, lng: 93.8000, population: 83030, area: 3460, accessibilityScore: 30, riskScore: 72, roadConnectivity: 35, railConnectivity: 0, airportAccess: 18, nearestHub: 'guwahati-hub', nearestHubDistance: 400, avgDeliveryTime: 38, avgTravelTime: 14, lastMileDifficulty: 'very-high', infrastructureQuality: 26, demandLevel: 25, elevation: 1200, terrain: 'mountainous' },
+  { id: 'dibang-valley', name: 'Dibang Valley (Anini)', stateId: 'arunachal', lat: 28.7900, lng: 95.9000, population: 7948, area: 9129, accessibilityScore: 18, riskScore: 84, roadConnectivity: 22, railConnectivity: 0, airportAccess: 8, nearestHub: 'dibrugarh-hub', nearestHubDistance: 405, avgDeliveryTime: 52, avgTravelTime: 20, lastMileDifficulty: 'very-high', infrastructureQuality: 20, demandLevel: 22, elevation: 1968, terrain: 'mountainous' },
+  { id: 'lower-dibang', name: 'Lower Dibang Valley (Roing)', stateId: 'arunachal', lat: 28.1400, lng: 95.8300, population: 53986, area: 3900, accessibilityScore: 42, riskScore: 68, roadConnectivity: 48, railConnectivity: 5, airportAccess: 25, nearestHub: 'dibrugarh-hub', nearestHubDistance: 180, avgDeliveryTime: 24, avgTravelTime: 8, lastMileDifficulty: 'high', infrastructureQuality: 38, demandLevel: 36, elevation: 390, terrain: 'hilly' },
+  { id: 'lohit', name: 'Lohit (Tezu)', stateId: 'arunachal', lat: 27.9100, lng: 96.1600, population: 145726, area: 2402, accessibilityScore: 40, riskScore: 65, roadConnectivity: 46, railConnectivity: 5, airportAccess: 30, nearestHub: 'dibrugarh-hub', nearestHubDistance: 210, avgDeliveryTime: 26, avgTravelTime: 9, lastMileDifficulty: 'high', infrastructureQuality: 36, demandLevel: 34, elevation: 210, terrain: 'hilly' },
 
   // MANIPUR
   { id: 'imphal-west', name: 'Imphal West', stateId: 'manipur', lat: 24.8074, lng: 93.9384, population: 517992, area: 519, accessibilityScore: 62, riskScore: 48, roadConnectivity: 68, railConnectivity: 15, airportAccess: 70, nearestHub: 'imphal-hub', nearestHubDistance: 5, avgDeliveryTime: 10, avgTravelTime: 6, lastMileDifficulty: 'medium', infrastructureQuality: 58, demandLevel: 70, elevation: 786, terrain: 'hilly' },
@@ -279,6 +282,10 @@ export const graphNodes: GraphNode[] = [
   { id: 'agartala', name: 'Agartala', lat: 23.8315, lng: 91.2868, stateId: 'tripura' },
   { id: 'lumding', name: 'Lumding', lat: 25.7500, lng: 93.1700, stateId: 'assam' },
   { id: 'barpeta', name: 'Barpeta', lat: 26.3210, lng: 91.0050, stateId: 'assam' },
+  { id: 'anini', name: 'Anini', lat: 28.7900, lng: 95.9000, stateId: 'arunachal' },
+  { id: 'roing', name: 'Roing', lat: 28.1400, lng: 95.8300, stateId: 'arunachal' },
+  { id: 'tezu', name: 'Tezu', lat: 27.9100, lng: 96.1600, stateId: 'arunachal' },
+  { id: 'ziro', name: 'Ziro', lat: 27.5300, lng: 93.8300, stateId: 'arunachal' },
 ];
 
 export const graphEdges: GraphEdge[] = [
@@ -297,6 +304,11 @@ export const graphEdges: GraphEdge[] = [
   { from: 'bomdila', to: 'tawang', distance: 180, time: 7.0, cost: 6.0, risk: 82, accessibility: 22, roadId: 'nh-13', roadName: 'NH-13', condition: 'poor', waypoints: [[27.27, 92.42], [27.4, 92.1], [27.59, 91.87]] },
   { from: 'guwahati', to: 'itanagar', distance: 350, time: 8.5, cost: 4.5, risk: 55, accessibility: 45, roadId: 'nh-15', roadName: 'NH-15', condition: 'fair', waypoints: [[26.1445, 91.7362], [26.5, 92.3], [26.9, 93.0], [27.08, 93.61]] },
   { from: 'dibrugarh', to: 'pasighat', distance: 195, time: 5.5, cost: 4.8, risk: 60, accessibility: 35, roadId: 'nh-15', roadName: 'NH-515', condition: 'fair', waypoints: [[27.47, 94.91], [27.8, 95.1], [28.07, 95.33]] },
+  { from: 'tinsukia', to: 'roing', distance: 95, time: 2.2, cost: 3.5, risk: 45, accessibility: 55, roadId: 'nh-115', roadName: 'NH-115 (via Bhupen Hazarika Setu)', condition: 'good', waypoints: [[27.49, 95.35], [27.78, 95.66], [28.14, 95.83]] },
+  { from: 'roing', to: 'anini', distance: 225, time: 6.5, cost: 6.5, risk: 84, accessibility: 18, roadId: 'nh-313', roadName: 'NH-313 (Roing-Anini Highway via Hunli & Mayodia)', condition: 'fair', waypoints: [[28.14, 95.83], [28.23, 95.91], [28.52, 95.96], [28.79, 95.90]] },
+  { from: 'roing', to: 'pasighat', distance: 85, time: 2.0, cost: 3.8, risk: 48, accessibility: 48, roadId: 'nh-13', roadName: 'NH-13 (Trans-Arunachal Highway)', condition: 'good', waypoints: [[28.14, 95.83], [28.10, 95.55], [28.07, 95.33]] },
+  { from: 'roing', to: 'tezu', distance: 65, time: 1.5, cost: 3.5, risk: 42, accessibility: 52, roadId: 'nh-13', roadName: 'NH-13', condition: 'good', waypoints: [[28.14, 95.83], [27.98, 96.00], [27.91, 96.16]] },
+  { from: 'itanagar', to: 'ziro', distance: 110, time: 3.8, cost: 4.2, risk: 62, accessibility: 38, roadId: 'nh-13', roadName: 'NH-13 (Potin-Ziro)', condition: 'fair', waypoints: [[27.08, 93.61], [27.3, 93.7], [27.53, 93.83]] },
 
   // Assam to Meghalaya
   { from: 'guwahati', to: 'shillong', distance: 103, time: 2.8, cost: 3.5, risk: 42, accessibility: 65, roadId: 'nh-6', roadName: 'NH-6', condition: 'good', waypoints: [[26.1445, 91.7362], [25.8, 91.8], [25.58, 91.89]] },

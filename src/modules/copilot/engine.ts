@@ -10,6 +10,7 @@ import { assessAllRisks, assessDistrictRisk } from '@/modules/risk/engine';
 import { getTopGaps } from '@/modules/infrastructure/engine';
 import { forecastDemand } from '@/modules/demand/engine';
 import { optimizeRoutes } from '@/modules/routing/engine';
+import { RoutingService } from '@/lib/routing-service';
 
 interface QueryIntent {
   type: 'realtime_convoys' | 'live_alerts' | 'accessibility' | 'route' | 'risk' | 'demand' | 'hub' | 'infrastructure' | 'general' | 'scenario' | 'district' | 'state' | 'commodity';
@@ -166,6 +167,12 @@ function parseQuery(query: string): QueryIntent {
 }
 
 export function processQuery(query: string): CopilotMessage {
+  // Use authoritative RoutingService for all route analysis queries
+  const parsed = RoutingService.parseRouteQuery(query);
+  if (parsed.intent === 'route_analysis' || (parsed.origin && parsed.destination)) {
+    return RoutingService.generateGroundedResponse(parsed, query);
+  }
+
   const intent = parseQuery(query);
 
   switch (intent.type) {
@@ -274,23 +281,8 @@ function handleLiveAlertsQuery(query: string): CopilotMessage {
 }
 
 function handleRouteQuery(query: string, intent: QueryIntent): CopilotMessage {
-  const origin = intent.entities[0] || 'Guwahati';
-  const dest = intent.entities[1] || (origin.toLowerCase().includes('guwahati') ? 'Tawang' : 'Silchar');
-
-  return {
-    role: 'assistant',
-    content: `**AI Multi-Criteria Route Optimization: ${origin} → ${dest}**\n\n• **Optimal Route:** National Highway Corridor via primary transit nodes\n• **Terrain Adaptation:** Mountain gradient speed factor applied (average 32-45 km/h)\n• **Safety Factor:** 88/100 (High-priority freight corridor)\n• **Fuel Penalty:** +18% on uphill climbs with heavy cargo (>10t)\n\n**Actionable Route Guidance:**\nDepart early morning (05:30 - 06:30) to avoid mountain pass fog and single-lane construction detours.`,
-    timestamp: new Date().toISOString(),
-    metrics: [
-      { label: 'Origin', value: origin },
-      { label: 'Destination', value: dest },
-      { label: 'Safety Factor', value: '88/100' },
-    ],
-    recommendations: [
-      `Inspect tire pressure and air brakes before departing ${origin}`,
-      `Coordinate checkpost clearance at inter-state border gate`,
-    ],
-  };
+  const parsed = RoutingService.parseRouteQuery(query);
+  return RoutingService.generateGroundedResponse(parsed, query);
 }
 
 function handleDistrictQuery(districtName: string): CopilotMessage {

@@ -282,12 +282,16 @@ export const api = {
   },
 
   // ===== AI COPILOT =====
-  async askCopilot(query: string, apiKey?: string): Promise<CopilotMessage> {
+  async askCopilot(
+    query: string,
+    apiKey?: string,
+    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+  ): Promise<CopilotMessage> {
     // 1. Try FastAPI backend if accessible
     try {
       return await fetchWithTimeout<CopilotMessage>('/api/copilot/query', {
         method: 'POST',
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, api_key: apiKey }),
       }, 3500);
     } catch {
       // 2. Try Next.js serverless route /api/copilot (works natively on Vercel and local)
@@ -295,7 +299,7 @@ export const api = {
         const res = await fetch('/api/copilot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, apiKey }),
+          body: JSON.stringify({ query, apiKey, conversationHistory }),
         });
         if (res.ok) {
           return await res.json();

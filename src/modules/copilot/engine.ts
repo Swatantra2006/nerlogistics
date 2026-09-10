@@ -220,7 +220,7 @@ function handleRealtimeConvoysQuery(query: string): CopilotMessage {
   if (matched) {
     return {
       role: 'assistant',
-      content: `**Live Telemetry for ${matched.id} (${matched.vehicleNumber})** [GPS Ping: ${timeStr}]:\n\n• **Corridor:** ${matched.corridor}\n• **Driver:** ${matched.driver}\n• **Cargo:** ${matched.cargo} (${matched.weightTons} tons)\n• **Real-Time Speed:** **${matched.speedKmh} km/h**\n• **GPS Coordinates:** \`${matched.currentLat.toFixed(4)}°N, ${matched.currentLng.toFixed(4)}°E\`\n• **Transit Status:** ${matched.status.toUpperCase()} (ETA: ${matched.etaHours} hrs)\n• **Delay Risk Assessment:** ${matched.delayRisk}\n\n**Advisory:** Vehicle is moving within optimal hill corridor parameters.`,
+      content: `**Fleet Simulation Telemetry for ${matched.id} (${matched.vehicleNumber})** [Telemetry Sync: ${timeStr}]:\n\n• **Corridor:** ${matched.corridor}\n• **Driver:** ${matched.driver}\n• **Cargo:** ${matched.cargo} (${matched.weightTons} tons)\n• **Simulated Velocity:** **${matched.speedKmh} km/h**\n• **Simulated Coordinates:** \`${matched.currentLat.toFixed(4)}°N, ${matched.currentLng.toFixed(4)}°E\`\n• **Transit Status:** ${matched.status.toUpperCase()} (ETA: ${matched.etaHours} hrs)\n• **Delay Risk Assessment:** ${matched.delayRisk}\n\n**Advisory:** Vehicle is moving within optimal hill corridor parameters. *(Simulated fleet stream)*`,
       timestamp: now.toISOString(),
       metrics: [
         { label: 'Speed', value: `${matched.speedKmh} km/h` },
@@ -229,7 +229,7 @@ function handleRealtimeConvoysQuery(query: string): CopilotMessage {
         { label: 'Risk', value: matched.delayRisk.split(' ')[0] },
       ],
       recommendations: [
-        `Continuous GPS telemetry active on ${matched.corridor}`,
+        `Continuous fleet telemetry active on ${matched.corridor}`,
         'Alert driver if rainfall exceeds 15mm/hr',
       ],
     };
@@ -244,7 +244,7 @@ function handleRealtimeConvoysQuery(query: string): CopilotMessage {
 
   return {
     role: 'assistant',
-    content: `**Real-Time NER Freight Operations Stream** [GPS Ping: ${timeStr}]:\n\nThere are currently **${LIVE_CONVOYS.length} commercial freight convoys** actively tracked across North Eastern corridors carrying **${totalWeight} tons** of supplies:\n\n${list}\n\n**Live Corridor Metrics:**\n• Average Mountain Velocity: **${avgSpeed} km/h**\n• Highest Elevation Convoy: SK-02-B-1188 on NH-10 (Siliguri → Gangtok)\n• Road Surface Friction: Optimal across GS Road and NH-8.`,
+    content: `**NER Freight Operations Fleet Simulation Stream** [Telemetry Sync: ${timeStr}]:\n\nThere are currently **${LIVE_CONVOYS.length} simulated commercial freight convoys** tracked across North Eastern corridors carrying **${totalWeight} tons** of supplies:\n\n${list}\n\n**Corridor Metrics (Simulated):**\n• Average Mountain Velocity: **${avgSpeed} km/h**\n• Highest Elevation Convoy: SK-02-B-1188 on NH-10 (Siliguri → Gangtok)\n• Road Surface Friction: Optimal across GS Road and NH-8. *(Simulated real-time logistics telemetry)*`,
     timestamp: now.toISOString(),
     metrics: [
       { label: 'Active Convoys', value: `${LIVE_CONVOYS.length}` },
@@ -478,15 +478,15 @@ function handleScenarioQuery(query: string, intent: QueryIntent): CopilotMessage
 function handleGeneralQuery(query: string, intent: QueryIntent): CopilotMessage {
   return {
     role: 'assistant',
-    content: `**NER Logistics Intelligence AI Assistant:**\n\nAnalyzing transportation across India's **8 North Eastern States** (Assam, Meghalaya, Arunachal Pradesh, Sikkim, Tripura, Mizoram, Nagaland, Manipur).\n\n• **Siliguri Corridor Dependency:** 85% of inbound goods flow through the 22 km bottleneck. Developing National Waterway 2 (Brahmaputra) and railhead transshipment creates crucial redundancy.\n• **Real-Time Fleet:** Commercial convoys are tracked live on NH-6, NH-10, NH-29, and NH-13.\n• **Mountain Topography:** Gradients reduce speeds to 28-35 km/h, requiring strategic staging depots.\n\n**You can ask me real-time questions such as:**\n1. *"Where are the moving trucks right now?"*\n2. *"Any active landslides or road blocks today?"*\n3. *"What is the safest route from Guwahati to Tawang?"*\n4. *"How is logistics in Meghalaya?"*\n5. *"What is the demand forecast for Kamrup?"*`,
+    content: `**NER Logistics Intelligence AI Assistant:**\n\nAnalyzing transportation across India's **8 North Eastern States** (Assam, Meghalaya, Arunachal Pradesh, Sikkim, Tripura, Mizoram, Nagaland, Manipur).\n\n• **Siliguri Corridor Dependency:** 85% of inbound goods flow through the 22 km bottleneck. Developing National Waterway 2 (Brahmaputra) and railhead transshipment creates crucial redundancy.\n• **Fleet Simulation:** Commercial convoys are simulated in transit on NH-6, NH-10, NH-29, and NH-13.\n• **Mountain Topography:** Gradients reduce speeds to 28-35 km/h, requiring strategic staging depots.\n\n**You can ask me real-time questions such as:**\n1. *"What is the route between Dibrugarh and Anini?"*\n2. *"Where are the moving trucks right now?"*\n3. *"What is the road route from Gangtok to Pelling?"*\n4. *"Any active landslides or road blocks today?"*\n5. *"What is the safest route from Guwahati to Tawang?"*`,
     timestamp: new Date().toISOString(),
     metrics: [
       { label: 'States Covered', value: '8' },
       { label: 'Active Convoys', value: `${LIVE_CONVOYS.length}` },
-      { label: 'Telemetry', value: 'Real-Time' },
+      { label: 'Telemetry', value: 'Fleet Simulation' },
     ],
     recommendations: [
-      'Ask about live moving convoys, GPS coordinates, or drivers',
+      'Ask about any route across NER (e.g., Gangtok to Pelling, Dibrugarh to Anini)',
       'Inquire about current weather advisories and road conditions',
       'Optimize routes for specific freight weights and priorities',
     ],

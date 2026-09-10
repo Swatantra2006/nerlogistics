@@ -285,14 +285,15 @@ export const api = {
   async askCopilot(
     query: string,
     apiKey?: string,
-    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
+    originCoords?: { lat: number; lng: number }
   ): Promise<CopilotMessage> {
     // 1. Try Next.js serverless route FIRST (works natively on Vercel and local dev)
     try {
       const res = await fetch('/api/copilot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, apiKey, conversationHistory }),
+        body: JSON.stringify({ query, apiKey, conversationHistory, originCoords }),
       });
       if (res.ok) {
         return await res.json();
@@ -307,7 +308,7 @@ export const api = {
     try {
       return await fetchWithTimeout<CopilotMessage>('/api/copilot/query', {
         method: 'POST',
-        body: JSON.stringify({ query, api_key: apiKey, conversation_history: conversationHistory }),
+        body: JSON.stringify({ query, api_key: apiKey, conversation_history: conversationHistory, origin_coords: originCoords }),
       }, 3000);
     } catch {
       // Backend not available

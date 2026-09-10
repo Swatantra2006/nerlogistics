@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Bot, Send, Sparkles, Lightbulb, BarChart3, Radio, RefreshCw, Compass, Key, Settings, Check, X, ExternalLink, Cpu } from 'lucide-react';
+import { Bot, Send, Sparkles, Lightbulb, BarChart3, Radio, RefreshCw, Compass, Key, Settings, Check, X, ExternalLink, Cpu, MapPin, Loader2 } from 'lucide-react';
 import { processQuery } from '@/modules/copilot/engine';
 import { CopilotMessage } from '@/types';
 import api from '@/lib/api';
 
 const suggestedQueries = [
   'What is the route between Dibrugarh and Anini?',
+  'What is the road route from Gangtok to Pelling?',
   'Where are the moving freight trucks right now?',
   'What is the route from Guwahati to Silchar?',
   'How can I reach Tawang from Guwahati?',
@@ -19,7 +20,8 @@ const suggestedQueries = [
 
 const mobileQuickPrompts = [
   '🗺️ Route: Dibrugarh → Anini',
-  '🚚 Live Moving Trucks',
+  '🗺️ Gangtok → Pelling',
+  '🚚 Fleet Simulation',
   '⚠️ Active Landslide Alerts',
   '🗺️ Route: Guwahati → Tawang',
   '🏔️ Meghalaya Logistics',
@@ -30,12 +32,12 @@ export default function CopilotPage() {
   const [messages, setMessages] = useState<CopilotMessage[]>([
     {
       role: 'assistant',
-      content: `Welcome to the **NER Logistics AI Copilot** 🧠\n\nI am your **real-time intelligent assistant** for freight, supply chain, and risk intelligence across India's 8 North Eastern States.\n\nI provide **grounded, multi-criteria route optimization**, **live GPS truck telemetry**, and analytical data across all 8 states.\n\nAsk me any route or logistics question in natural language (e.g. *"What is the route between Dibrugarh and Anini?"*), or tap one of the suggested queries below!`,
+      content: `Welcome to the **NER Logistics AI Copilot** 🧠\n\nI am your **intelligent logistics assistant** for freight, supply chain, and risk intelligence across India's 8 North Eastern States.\n\nI provide **dynamic OpenStreetMap road routing**, **multi-criteria corridor analysis**, and **simulated fleet telemetry** across all 8 states.\n\nAsk me any route or logistics question in natural language (e.g. *"What is the route between Dibrugarh and Anini?"* or *"Gangtok to Pelling"*), or tap one of the suggested queries below!`,
       timestamp: new Date().toISOString(),
       recommendations: [
         'Try asking: "What is the route between Dibrugarh and Anini?"',
+        'Try asking: "What is the road route from Gangtok to Pelling?"',
         'Try asking: "Where are the moving freight trucks right now?"',
-        'Try asking: "What is the safest route from Guwahati to Silchar?"',
       ],
     },
   ]);
@@ -45,6 +47,8 @@ export default function CopilotPage() {
   const [activeApiKey, setActiveApiKey] = useState('');
   const [tempApiKey, setTempApiKey] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,6 +67,28 @@ export default function CopilotPage() {
       // localStorage may not be available in private mode
     }
   }, []);
+
+  const handleUseMyLocation = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      alert('Browser geolocation is not available.');
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocating(false);
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setCurrentCoords(coords);
+        setInput('Route from my current location to ');
+      },
+      (err) => {
+        setIsLocating(false);
+        console.warn('Geolocation lookup failed:', err);
+        alert('Could not access your location. Please check browser permissions.');
+      },
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  };
 
   const handleSaveKey = () => {
     const trimmed = tempApiKey.trim();
@@ -112,8 +138,8 @@ export default function CopilotPage() {
 
     let response: CopilotMessage;
     try {
-      // Connect to Serverless Route / FastAPI backend with live telemetry and optional custom API key
-      response = await api.askCopilot(q, activeApiKey || undefined, conversationHistory);
+      // Connect to Serverless Route / FastAPI backend with live road routing and optional custom API key
+      response = await api.askCopilot(q, activeApiKey || undefined, conversationHistory, currentCoords || undefined);
     } catch (err) {
       console.warn('Backend copilot query failed, using rich local engine fallback:', err);
       // Fallback to local real-time engine
@@ -269,6 +295,19 @@ export default function CopilotPage() {
 
           {/* Quick Mobile Prompts Carousel */}
           <div className="px-3 pt-2 pb-1 border-t border-surface-800/80 overflow-x-auto flex items-center gap-1.5 no-scrollbar">
+            <button
+              onClick={handleUseMyLocation}
+              disabled={isProcessing || isLocating}
+              className="whitespace-nowrap px-2.5 py-1 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-[11px] text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 transition disabled:opacity-50 flex items-center gap-1 font-medium"
+              title="Detect your browser GPS location for route queries"
+            >
+              {isLocating ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <MapPin className="w-3 h-3 text-emerald-400" />
+              )}
+              <span>{currentCoords ? '📍 Location Active' : '📍 Use My Location'}</span>
+            </button>
             {mobileQuickPrompts.map((prompt, pi) => (
               <button
                 key={pi}
@@ -284,15 +323,30 @@ export default function CopilotPage() {
           {/* Input Box */}
           <div className="p-3 sm:p-4 border-t border-primary-500/10 bg-surface-900/40">
             <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask any question: moving trucks, live alerts, routes, districts, commodities..."
-                className="input-field flex-1 text-xs sm:text-sm"
-                disabled={isProcessing}
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask any route or question: Dibrugarh to Anini, Gangtok to Pelling, moving trucks..."
+                  className="input-field w-full text-xs sm:text-sm pr-9"
+                  disabled={isProcessing}
+                />
+                <button
+                  type="button"
+                  onClick={handleUseMyLocation}
+                  disabled={isProcessing || isLocating}
+                  title={currentCoords ? `GPS Active (${currentCoords.lat.toFixed(2)}°N, ${currentCoords.lng.toFixed(2)}°E)` : "Detect GPS Location"}
+                  className={`absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md transition ${
+                    currentCoords
+                      ? 'text-emerald-400 hover:text-emerald-300'
+                      : 'text-surface-400 hover:text-white'
+                  }`}
+                >
+                  {isLocating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MapPin className="w-3.5 h-3.5" />}
+                </button>
+              </div>
               <button
                 onClick={() => handleSend()}
                 disabled={!input.trim() || isProcessing}
@@ -332,7 +386,7 @@ export default function CopilotPage() {
               Real-Time Intelligence
             </h3>
             <p className="text-[11px] text-surface-400 leading-relaxed">
-              Unlike static chatbots, this Copilot is connected directly to the platform&apos;s live database: active GPS convoy pings, real-time hazard notifications, road friction ratings, and spatial routing algorithms.
+              Connected to live OpenStreetMap road network routing, active landslide hazard feeds, corridor friction ratings, and simulated freight fleet telemetry.
             </p>
           </div>
         </div>

@@ -16,8 +16,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const originCoords = body.originCoords as { lat: number; lng: number } | undefined;
+    const destinationCoords = body.destinationCoords as { lat: number; lng: number } | undefined;
+
     // Step 1: Parse User Intent & Extract Exact Entities (Origin, Destination, Target)
-    const parsed: ParsedQuery = RoutingService.parseRouteQuery(query);
+    let parsed: ParsedQuery = RoutingService.parseRouteQuery(query);
+
+    // Resolve entities dynamically (Nominatim / Coordinates / NER graph)
+    parsed = await RoutingService.resolveEntitiesAsync(parsed, { originCoords, destinationCoords });
 
     // If follow-up question and origin/destination missing, inspect previous user messages for context
     const needsContext = ['route_analysis', 'risk_inquiry'].includes(parsed.intent);
@@ -25,7 +31,8 @@ export async function POST(req: NextRequest) {
       // Walk backward through user messages to find the most recent one with locations
       for (let i = history.length - 1; i >= 0; i--) {
         if (history[i].role === 'user') {
-          const lastParsed = RoutingService.parseRouteQuery(history[i].content);
+          let lastParsed = RoutingService.parseRouteQuery(history[i].content);
+          lastParsed = await RoutingService.resolveEntitiesAsync(lastParsed);
           if (!parsed.origin && lastParsed.origin) parsed.origin = lastParsed.origin;
           if (!parsed.destination && lastParsed.destination) parsed.destination = lastParsed.destination;
           if (parsed.origin && parsed.destination) break;
@@ -33,10 +40,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Step 2: Retrieve Grounded Logistics / Routing Data
+    // Step 2: Retrieve Grounded Logistics / Routing Data (OSRM Live Road Routing with Spatial Fallback)
     let groundedRoute: GroundedRouteData | null = null;
     if (parsed.origin && parsed.destination) {
-      groundedRoute = RoutingService.calculateRoute(parsed.origin, parsed.destination, parsed.priority);
+      groundedRoute = await RoutingService.calculateRouteAsync(parsed.origin, parsed.destination, parsed.priority);
     }
 
     // Determine API Key — server-side only, never exposed to browser
@@ -64,21 +71,29 @@ CRITICAL RULES YOU MUST ALWAYS FOLLOW:
 
         // Add grounded route context if available
         if (groundedRoute) {
+          const providerLabel = groundedRoute.provider === 'osrm'
+            ? 'OpenStreetMap OSRM Road Routing Engine'
+            : 'NER Spatial Graph & Topology Engine';
+
           systemInstruction += `
 
-VERIFIED ROUTE DATA FOR THIS SPECIFIC QUERY (USE THIS DATA):
-- Origin: ${groundedRoute.origin.name} (${groundedRoute.origin.stateName})
-- Destination: ${groundedRoute.destination.name} (${groundedRoute.destination.stateName})
-- Total Road Distance: ${groundedRoute.totalDistanceKm} km
-- Estimated Travel Time: ~${groundedRoute.estimatedTimeHours} hours (light commercial) / ~${groundedRoute.heavyTruckTimeHours} hours (heavy freight >12t)
-- Highway Corridors: ${groundedRoute.highways.join(' → ')}
-- Waypoints: ${groundedRoute.waypoints.join(' ➔ ')}
+VERIFIED ROUTE DATA FOR THIS SPECIFIC QUERY (USE THIS AS GROUND TRUTH):
+- Origin: ${groundedRoute.origin.name} (${groundedRoute.origin.stateName}) [${groundedRoute.origin.lat.toFixed(4)}°N, ${groundedRoute.origin.lng.toFixed(4)}°E]
+- Destination: ${groundedRoute.destination.name} (${groundedRoute.destination.stateName}) [${groundedRoute.destination.lat.toFixed(4)}°N, ${groundedRoute.destination.lng.toFixed(4)}°E]
+- Routing Provider: ${providerLabel}
+- Real Driving Distance: ${groundedRoute.totalDistanceKm} km
+- Estimated Travel Time: ~${groundedRoute.estimatedTimeHours} hours (light commercial / standard) / ~${groundedRoute.heavyTruckTimeHours} hours (heavy freight >12t)
+- Highway & Road Corridors: ${groundedRoute.highways.join(' → ')}
+- Waypoints & Transshipment Nodes: ${groundedRoute.waypoints.join(' ➔ ')}
 - Terrain Profile: ${groundedRoute.terrainSummary}
 - Composite Risk Score: ${groundedRoute.riskScore}/100 (${groundedRoute.riskLevel} Hazard Severity)
-- Active Hazards: ${groundedRoute.hazards.join('; ')}
-- Key Staging Checkpoints: ${groundedRoute.keyCheckpoints.join('; ')}
+- Active Environmental Hazards: ${groundedRoute.hazards.join('; ')}
+- Key Staging Depots / Checkpoints: ${groundedRoute.keyCheckpoints.join('; ')}
 
-MANDATORY: Your response MUST be specifically about the route from ${groundedRoute.origin.name} to ${groundedRoute.destination.name}. Use the exact distances, travel times, and highways listed above.`;
+MANDATORY RULES:
+1. Your response MUST be specifically and exclusively about the route from ${groundedRoute.origin.name} to ${groundedRoute.destination.name}.
+2. Use the exact road distance (${groundedRoute.totalDistanceKm} km) and travel time (~${groundedRoute.estimatedTimeHours} hrs) provided above. Do NOT fabricate or alter these figures.
+3. Mention key highway corridors (${groundedRoute.highways.slice(0, 3).join(', ')}) and mountain terrain considerations.`;
         } else if (parsed.targetLocation) {
           systemInstruction += `
 
@@ -152,7 +167,7 @@ Answer specifically about logistics infrastructure and operations in ${parsed.ta
                 { label: 'Destination', value: groundedRoute.destination.name },
                 { label: 'Total Distance', value: `${groundedRoute.totalDistanceKm} km` },
                 { label: 'Est. Travel Time', value: `~${groundedRoute.estimatedTimeHours} hrs` },
-                { label: 'Risk Factor', value: `${groundedRoute.riskScore}/100 (${groundedRoute.riskLevel})` },
+                { label: 'Routing Engine', value: groundedRoute.provider === 'osrm' ? 'OSRM Live Road Network' : 'NER Spatial Topology' },
               ] : [
                 { label: 'AI Engine', value: 'Gemini 2.0 Flash (Live)' },
                 { label: 'Grounding', value: 'NER Spatial Database' },
@@ -186,7 +201,7 @@ Answer specifically about logistics infrastructure and operations in ${parsed.ta
               { label: 'Destination', value: groundedRoute.destination.name },
               { label: 'Total Distance', value: `${groundedRoute.totalDistanceKm} km` },
               { label: 'Travel Time', value: `~${groundedRoute.estimatedTimeHours} hrs` },
-              { label: 'Engine', value: 'NER Spatial Grounding' },
+              { label: 'Engine', value: groundedRoute.provider === 'osrm' ? 'OSRM Live Road Network' : 'NER Spatial Grounding' },
             ];
             return NextResponse.json(groundedResponse);
           } else {
@@ -258,22 +273,26 @@ function validateResponseRelevance(responseText: string, parsed: ParsedQuery): b
 
   // If explicit origin and destination
   if (parsed.origin && parsed.destination) {
-    const orig = parsed.origin.name.toLowerCase();
-    const dest = parsed.destination.name.toLowerCase();
+    const origWords = parsed.origin.name.toLowerCase().split(/[\s,.-]+/).filter(w => w.length > 2);
+    const destWords = parsed.destination.name.toLowerCase().split(/[\s,.-]+/).filter(w => w.length > 2);
 
-    const mentionsOrig = lower.includes(orig) || lower.includes(parsed.origin.id.toLowerCase());
-    const mentionsDest = lower.includes(dest) || lower.includes(parsed.destination.id.toLowerCase());
+    const mentionsOrig = origWords.some(w => lower.includes(w)) || lower.includes(parsed.origin.id.toLowerCase());
+    const mentionsDest = destWords.some(w => lower.includes(w)) || lower.includes(parsed.destination.id.toLowerCase());
 
     // Response must mention at least one of the endpoints
     if (!mentionsOrig && !mentionsDest) {
-      console.warn(`Validation failed: Neither ${orig} nor ${dest} found in response.`);
+      console.warn(`Validation failed: Neither ${parsed.origin.name} nor ${parsed.destination.name} found in response.`);
       return false;
     }
 
     // Contamination check: If query is NOT about Guwahati -> Silchar, ensure response doesn't hallucinate Guwahati -> Silchar
-    if (parsed.origin.id !== 'guwahati' && parsed.destination.id !== 'silchar') {
+    const isGuwahatiSilchar =
+      (parsed.origin.id === 'guwahati' && parsed.destination.id === 'silchar') ||
+      (parsed.origin.name.toLowerCase().includes('guwahati') && parsed.destination.name.toLowerCase().includes('silchar'));
+
+    if (!isGuwahatiSilchar) {
       if (lower.includes('guwahati to silchar') || lower.includes('guwahati → silchar') || lower.includes('guwahati-silchar')) {
-        console.warn(`Validation failed: Response contaminated with Guwahati-Silchar for query ${orig} → ${dest}.`);
+        console.warn(`Validation failed: Response contaminated with Guwahati-Silchar for query ${parsed.origin.name} → ${parsed.destination.name}.`);
         return false;
       }
     }
@@ -281,9 +300,10 @@ function validateResponseRelevance(responseText: string, parsed: ParsedQuery): b
 
   // If target location specified (e.g., Aizawl)
   if (parsed.targetLocation && !parsed.destination) {
-    const target = parsed.targetLocation.name.toLowerCase();
-    if (!lower.includes(target) && !lower.includes(parsed.targetLocation.id.toLowerCase())) {
-      console.warn(`Validation failed: Target location ${target} not mentioned.`);
+    const targetWords = parsed.targetLocation.name.toLowerCase().split(/[\s,.-]+/).filter(w => w.length > 2);
+    const mentionsTarget = targetWords.some(w => lower.includes(w)) || lower.includes(parsed.targetLocation.id.toLowerCase());
+    if (!mentionsTarget) {
+      console.warn(`Validation failed: Target location ${parsed.targetLocation.name} not mentioned.`);
       return false;
     }
   }

@@ -23,6 +23,8 @@ export interface ParsedQuery {
   intent: 'route_analysis' | 'risk_inquiry' | 'accessibility_inquiry' | 'hub_inquiry' | 'commodity_inquiry' | 'general';
   origin?: LocationEntity;
   destination?: LocationEntity;
+  originStr?: string;
+  destStr?: string;
   targetLocation?: LocationEntity;
   targetState?: string;
   commodity?: string;
@@ -366,11 +368,311 @@ export class RoutingService {
       intent,
       origin,
       destination,
+      originStr,
+      destStr,
       targetLocation,
       targetState,
       priority,
       rawLocations: foundEntities.map(e => e.name),
     };
+  }
+
+  private static geocodingCache = new Map<string, LocationEntity>();
+
+  /**
+   * Dynamic Location Geocoder (OpenStreetMap Nominatim + Local NER fallback)
+   * Resolves arbitrary cities, towns, villages, stations, landmarks, or GPS points.
+   */
+  static async geocodeDynamic(input: string, coordsHint?: { lat: number; lng: number }): Promise<LocationEntity | undefined> {
+    if (!input) return undefined;
+    let clean = input.trim().toLowerCase().replace(/[^\w\s\.,\-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // 1. Current user GPS location
+    if (['current location', 'my location', 'my current location', 'here', 'current gps', 'gps location'].some(k => clean.includes(k))) {
+      if (coordsHint && coordsHint.lat && coordsHint.lng) {
+        return {
+          id: 'user-gps',
+          name: `Current Location (${coordsHint.lat.toFixed(3)}°N, ${coordsHint.lng.toFixed(3)}°E)`,
+          stateId: 'user',
+          stateName: 'Current Location',
+          lat: coordsHint.lat,
+          lng: coordsHint.lng,
+          terrain: 'plain',
+        };
+      }
+    }
+
+    // 2. Direct GPS coordinate pair (e.g., "26.144, 91.736" or "26.144° N, 91.736° E")
+    const coordMatch = clean.match(/(-?\d+\.?\d*)\s*°?\s*[nNsS]?\s*,\s*(-?\d+\.?\d*)\s*°?\s*[eEwW]?/);
+    if (coordMatch) {
+      const lat = parseFloat(coordMatch[1]);
+      const lng = parseFloat(coordMatch[2]);
+      if (!isNaN(lat) && !isNaN(lng) && lat >= 20 && lat <= 32 && lng >= 85 && lng <= 98) {
+        return {
+          id: `gps-${lat.toFixed(3)}-${lng.toFixed(3)}`,
+          name: `GPS Location (${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E)`,
+          stateId: 'ner',
+          stateName: 'North Eastern Region',
+          lat,
+          lng,
+          terrain: lat > 27.2 ? 'mountainous' : 'plain',
+        };
+      }
+    }
+
+    // Strip common filler words
+    clean = clean.replace(/^(what about|how about|what is|how is|how can i|route|path|from|to|between|near|travel to|reach|go to)\s+/i, '').trim();
+    clean = clean.replace(/\s+(route|corridor|highway|road)$/i, '').trim();
+
+    if (this.geocodingCache.has(clean)) {
+      return this.geocodingCache.get(clean);
+    }
+
+    // 3. Fast local check in local NER dictionary / graph nodes / districts
+    const localMatch = this.geocode(clean);
+    if (localMatch) {
+      this.geocodingCache.set(clean, localMatch);
+      return localMatch;
+    }
+
+    // 4. Query OpenStreetMap Nominatim for arbitrary locations (villages, towns, stations, airports, landmarks)
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2800);
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(clean)}&countrycodes=in&viewbox=88.0,29.5,97.5,21.5&bounded=0&limit=1`;
+      
+      const res = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'NER-Logistics-Platform/2.0 (intelligence@nerlogistics.gov.in)',
+        },
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const item = data[0];
+          const lat = parseFloat(item.lat);
+          const lng = parseFloat(item.lon);
+          const displayName: string = item.display_name || clean;
+          
+          let stateName = 'North Eastern Region';
+          let stateId = 'ner';
+          const lowerDisplay = displayName.toLowerCase();
+          for (const s of states) {
+            if (lowerDisplay.includes(s.name.toLowerCase())) {
+              stateName = s.name;
+              stateId = s.id;
+              break;
+            }
+          }
+          if (lowerDisplay.includes('sikkim')) { stateName = 'Sikkim'; stateId = 'sikkim'; }
+          if (lowerDisplay.includes('west bengal') || lowerDisplay.includes('siliguri')) { stateName = 'West Bengal (NER Gateway)'; stateId = 'sikkim'; }
+
+          const shortName = displayName.split(',')[0].trim();
+          const entity: LocationEntity = {
+            id: `osm-${clean.replace(/\s+/g, '-')}`,
+            name: shortName.charAt(0).toUpperCase() + shortName.slice(1),
+            stateId,
+            stateName,
+            lat,
+            lng,
+            terrain: (lat > 27.2 || stateId === 'sikkim' || stateId === 'arunachal' || stateId === 'mizoram') ? 'mountainous' : 'plain',
+          };
+          this.geocodingCache.set(clean, entity);
+          return entity;
+        }
+      }
+    } catch (err) {
+      console.warn(`Nominatim geocoding request failed for "${clean}":`, err);
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Asynchronously resolves extracted entities using dynamic geocoding
+   */
+  static async resolveEntitiesAsync(
+    parsed: ParsedQuery,
+    options?: { originCoords?: { lat: number; lng: number }; destinationCoords?: { lat: number; lng: number } }
+  ): Promise<ParsedQuery> {
+    // Current user location resolution
+    if (parsed.originStr && ['current location', 'my location', 'my current location', 'here', 'current gps'].some(k => parsed.originStr?.toLowerCase().includes(k))) {
+      if (options?.originCoords) {
+        parsed.origin = await this.geocodeDynamic('current location', options.originCoords);
+      }
+    }
+
+    if (!parsed.origin && parsed.originStr) {
+      parsed.origin = await this.geocodeDynamic(parsed.originStr, options?.originCoords);
+    }
+    if (!parsed.destination && parsed.destStr) {
+      parsed.destination = await this.geocodeDynamic(parsed.destStr, options?.destinationCoords);
+    }
+
+    // Fallback using raw locations if regex was unspecific
+    if (!parsed.origin && parsed.rawLocations.length >= 1) {
+      parsed.origin = await this.geocodeDynamic(parsed.rawLocations[0], options?.originCoords);
+    }
+    if (!parsed.destination && parsed.rawLocations.length >= 2) {
+      parsed.destination = await this.geocodeDynamic(parsed.rawLocations[1], options?.destinationCoords);
+    }
+
+    if (parsed.origin && parsed.destination) {
+      parsed.intent = 'route_analysis';
+    }
+
+    return parsed;
+  }
+
+  /**
+   * Real Road Network Routing via OpenStreetMap OSRM
+   * Provides real-world road geometry, distances, step-by-step highways, and durations.
+   */
+  static async fetchOSRMRoute(origin: LocationEntity, destination: LocationEntity): Promise<GroundedRouteData | null> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&steps=true&alternatives=true`;
+
+      const res = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'NER-Logistics-Platform/2.0',
+        },
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data?.routes || data.routes.length === 0) return null;
+
+      const primary = data.routes[0];
+      const distKm = Math.round((primary.distance / 1000) * 10) / 10;
+      const hours = Math.round((primary.duration / 3600) * 10) / 10;
+      const truckHours = Math.round(hours * 1.38 * 10) / 10;
+
+      // Extract real highway codes & names from turn steps
+      const highwaysFound = new Set<string>();
+      const steps = primary.legs?.[0]?.steps || [];
+      for (const step of steps) {
+        if (step.ref) highwaysFound.add(step.ref);
+        if (step.name && (step.name.toLowerCase().startsWith('nh') || step.name.toLowerCase().startsWith('national highway') || step.name.toLowerCase().startsWith('state highway') || step.name.toLowerCase().startsWith('sh-'))) {
+          highwaysFound.add(step.name);
+        }
+      }
+      const highways = Array.from(highwaysFound);
+      if (highways.length === 0) {
+        highways.push('National Highway & Regional Connecting Corridors');
+      }
+
+      // Waypoints along route
+      const waypoints = [origin.name];
+      if (steps.length > 5) {
+        const mid1 = steps[Math.floor(steps.length * 0.33)];
+        const mid2 = steps[Math.floor(steps.length * 0.66)];
+        if (mid1?.name && mid1.name !== waypoints[0]) waypoints.push(mid1.name);
+        if (mid2?.name && !waypoints.includes(mid2.name)) waypoints.push(mid2.name);
+      }
+      waypoints.push(destination.name);
+
+      // Analyze terrain & corridor hazards
+      const isMountainous = destination.terrain === 'mountainous' || origin.terrain === 'mountainous' || origin.lat > 27.0 || destination.lat > 27.0;
+      const hazards: string[] = [];
+      const checkpoints: string[] = [];
+
+      const combinedNames = (origin.name + ' ' + destination.name + ' ' + highways.join(' ')).toLowerCase();
+
+      if (combinedNames.includes('anini') || combinedNames.includes('mayodia') || combinedNames.includes('313')) {
+        hazards.push('Mayodia Pass (2,655m) heavy fog, winter snowfall, and single-lane steep gradients');
+        hazards.push('Dibang river catchment active monsoon debris flows and flash landslides near Hunli');
+        checkpoints.push('Bhupen Hazarika Setu (Dhola-Sadiya Bridge across Lohit River)');
+        checkpoints.push('Shantipur Checkgate (Inner Line Permit / ILP verification)');
+        checkpoints.push('Hunli Staging Depot (refueling point before Anini)');
+      } else if (combinedNames.includes('tawang') || combinedNames.includes('sela') || combinedNames.includes('bomdila') || combinedNames.includes('13')) {
+        hazards.push('Sela Pass (4,170m) sub-zero conditions, ice slush, and reduced oxygen for engines');
+        checkpoints.push('Bhalukpong ILP Checkpost');
+        checkpoints.push('Dirang staging bay for tire chain fitment');
+      } else if (combinedNames.includes('pelling') || combinedNames.includes('510') || combinedNames.includes('ravangla')) {
+        hazards.push('Steep Himalayan mountain curves, evening fog at Ravangla (2,100m) and Pelling (2,150m)');
+        hazards.push('Seasonal slope instability and mud seepage near Legship / Rangit River basin');
+        checkpoints.push('Singtam junction staging post');
+        checkpoints.push('Ravangla checkpoint & brake cooling bay');
+        checkpoints.push('Gyalshing district transshipment hub');
+      } else if (combinedNames.includes('sikkim') || combinedNames.includes('gangtok') || combinedNames.includes('10')) {
+        hazards.push('Teesta river valley rockfalls and pre-monsoon road subsidence (29th Mile zone)');
+        checkpoints.push('Rangpo multi-modal checkpost');
+      } else if (combinedNames.includes('sonapur') || combinedNames.includes('shillong') || combinedNames.includes('meghalaya') || combinedNames.includes('nh-6')) {
+        hazards.push('Sonapur tunnel flash mudslides and heavy rainfall belt in Meghalaya plateau');
+        checkpoints.push('Jowai bypass staging terminal');
+      } else {
+        if (isMountainous) {
+          hazards.push('Mountain single-lane curves with limited heavy-vehicle overtaking sightlines');
+          hazards.push('Monsoon slope washouts and seasonal road shoulder slippage');
+        } else {
+          hazards.push('High-density freight traffic and bridge axle weight restrictions');
+        }
+        checkpoints.push('State border transit checkpost');
+        checkpoints.push('Regional freight inspection bay');
+      }
+
+      // Check nearest logistics hubs
+      const nearbyHubs = logisticsHubs.map(h => {
+        const dLat = ((h.lat - destination.lat) * Math.PI) / 180;
+        const dLng = ((h.lng - destination.lng) * Math.PI) / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos((destination.lat * Math.PI) / 180) * Math.cos((h.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+        const d = Math.round(6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+        return { name: h.name, distKm: d };
+      }).sort((a, b) => a.distKm - b.distKm).slice(0, 2);
+
+      const altCount = data.routes.length > 1 ? data.routes.length - 1 : 0;
+      const alternatives = altCount > 0 ? [
+        `${altCount} alternative road corridor(s) detected via secondary regional highways (~${Math.round(data.routes[1].distance / 1000)} km, ~${Math.round(data.routes[1].duration / 360) / 10} hrs)`
+      ] : [
+        'Single primary all-weather arterial highway corridor available for this connection'
+      ];
+
+      return {
+        found: true,
+        origin,
+        destination,
+        totalDistanceKm: distKm,
+        estimatedTimeHours: hours,
+        heavyTruckTimeHours: truckHours,
+        highways,
+        waypoints,
+        terrainSummary: `${origin.stateName} (${origin.terrain || 'Plains'}) → ${destination.stateName} (${isMountainous ? 'Mountainous' : 'Plains'}) [OpenStreetMap OSRM Verified]`,
+        riskScore: isMountainous ? 68 : 38,
+        riskLevel: isMountainous ? 'High' : 'Moderate',
+        hazards,
+        keyCheckpoints: checkpoints,
+        alternatives,
+        strategicRecommendations: [
+          isMountainous ? 'Depart in daylight hours (05:00 - 06:30 IST) to clear mountain passes before afternoon cloud cover' : 'Schedule departure outside peak urban transit hours',
+          nearbyHubs.length > 0 ? `Stage secondary buffer stock at nearest regional transshipment hub: ${nearbyHubs[0].name} (${nearbyHubs[0].distKm} km)` : 'Maintain reserve fuel buffers for remote sectors',
+          'Enforce axle weight compliance on narrow river bridges and hill hairpin sections'
+        ]
+      };
+    } catch (err) {
+      console.warn('OSRM routing request failed or timed out:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Primary Async Route Calculator: Tries real OSRM road routing first,
+   * falling back to local Dijkstra graph / spatial engine if offline.
+   */
+  static async calculateRouteAsync(origin: LocationEntity, destination: LocationEntity, priority = 'safest'): Promise<GroundedRouteData> {
+    const osrmRoute = await this.fetchOSRMRoute(origin, destination);
+    if (osrmRoute) {
+      return osrmRoute;
+    }
+    return this.calculateRoute(origin, destination, priority);
   }
 
   /**

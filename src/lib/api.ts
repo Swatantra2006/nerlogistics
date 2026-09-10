@@ -316,7 +316,7 @@ export const api = {
 
     // 3. Resilient fallback to client-side grounded engine (no network required)
     console.warn('All API routes failed. Using client-side grounded engine fallback.');
-    return localProcessCopilot(query);
+    return localProcessCopilot(query, originCoords);
   },
 
   // ===== SPATIAL QUERIES =====

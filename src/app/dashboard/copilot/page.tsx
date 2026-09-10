@@ -1,43 +1,46 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Bot, Send, Sparkles, Lightbulb, BarChart3, Radio, RefreshCw, Compass, Key, Settings, Check, X, ExternalLink, Cpu, MapPin, Loader2 } from 'lucide-react';
+import { Bot, Send, Sparkles, Lightbulb, BarChart3, Radio, RefreshCw, Compass, Key, Settings, Check, X, ExternalLink, Cpu, MapPin, Loader2, Layers } from 'lucide-react';
 import { processQuery } from '@/modules/copilot/engine';
 import { CopilotMessage } from '@/types';
 import api from '@/lib/api';
 
 const suggestedQueries = [
-  'What is the route between Dibrugarh and Anini?',
+  'Which district has the worst accessibility?',
+  'Compare Aizawl and Shillong',
+  'Find the best route from Agartala to Aizawl',
+  'What is the demand forecast for Dibrugarh?',
+  'Which location needs the most infrastructure investment?',
+  'What is the safest route from Guwahati to Tawang considering hazards?',
+  'What is the accessibility score of Tawang?',
+  'Tell me about logistics in Nagaland',
+  'Which hub is closest to Tawang?',
   'What is the road route from Gangtok to Pelling?',
-  'Where are the moving freight trucks right now?',
-  'What is the route from Guwahati to Silchar?',
-  'How can I reach Tawang from Guwahati?',
-  'What are the risks between Dibrugarh and Anini?',
-  'Which route is better from Imphal to Kohima?',
-  'How accessible is Aizawl?',
-  'What logistics hubs are near Guwahati?',
 ];
 
 const mobileQuickPrompts = [
-  '🗺️ Route: Dibrugarh → Anini',
-  '🗺️ Gangtok → Pelling',
-  '🚚 Fleet Simulation',
-  '⚠️ Active Landslide Alerts',
-  '🗺️ Route: Guwahati → Tawang',
-  '🏔️ Meghalaya Logistics',
   '📊 Worst Accessibility',
+  '⚖️ Compare: Aizawl vs Shillong',
+  '🗺️ Route: Agartala → Aizawl',
+  '📈 Demand: Dibrugarh',
+  '🏗️ Infrastructure Gap Priority',
+  '🛡️ Safest: Guwahati → Tawang',
+  '🏔️ Nagaland Logistics',
+  '🚚 Fleet Simulation',
 ];
 
 export default function CopilotPage() {
   const [messages, setMessages] = useState<CopilotMessage[]>([
     {
       role: 'assistant',
-      content: `Welcome to the **NER Logistics AI Copilot** 🧠\n\nI am your **intelligent logistics assistant** for freight, supply chain, and risk intelligence across India's 8 North Eastern States.\n\nI provide **dynamic OpenStreetMap road routing**, **multi-criteria corridor analysis**, and **simulated fleet telemetry** across all 8 states.\n\nAsk me any route or logistics question in natural language (e.g. *"What is the route between Dibrugarh and Anini?"* or *"Gangtok to Pelling"*), or tap one of the suggested queries below!`,
+      content: `Welcome to the **NER Logistics AI Copilot** 🧠\n\nI am your **dynamic logistics intelligence system**, connected directly to the platform's real calculation engines and spatial datasets covering all **8 North Eastern States**.\n\nI dynamically compute **accessibility scores**, **Dijkstra & OSRM road routes**, **180-day demand forecasts**, **multi-hazard risk ratings**, and **infrastructure gap priorities**.\n\nAsk any logistics question in natural language (e.g. *"Which district has the worst accessibility?"* or *"Find the best route from Agartala to Aizawl"*), or tap one of the query templates below!`,
       timestamp: new Date().toISOString(),
+      sources: ['Accessibility Engine', 'Route Engine', 'Demand Forecast Model', 'Hazard Risk Model', 'Infrastructure Gap Engine'],
       recommendations: [
-        'Try asking: "What is the route between Dibrugarh and Anini?"',
-        'Try asking: "What is the road route from Gangtok to Pelling?"',
-        'Try asking: "Where are the moving freight trucks right now?"',
+        'Try asking: "Which district has the worst accessibility?"',
+        'Try asking: "Compare Aizawl and Shillong"',
+        'Try asking: "Find the best route from Agartala to Aizawl"',
       ],
     },
   ]);
@@ -274,6 +277,19 @@ export default function CopilotPage() {
                           <p key={ri} className="text-[11px] text-surface-300">• {rec}</p>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Source Transparency */}
+                  {msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-2.5 pt-2 border-t border-surface-800/80 flex items-center gap-1.5 flex-wrap">
+                      <Layers className="w-3 h-3 text-cyan-400 shrink-0" />
+                      <span className="text-[10px] font-semibold text-cyan-400 uppercase tracking-wider">
+                        Data Sources:
+                      </span>
+                      <span className="text-[11px] text-surface-300">
+                        {msg.sources.join(' · ')}
+                      </span>
                     </div>
                   )}
                 </div>

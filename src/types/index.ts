@@ -228,6 +228,10 @@ export interface CopilotMessage {
   timestamp: string;
   metrics?: { label: string; value: string }[];
   recommendations?: string[];
+  sources?: string[];
+  intent?: string;
+  locations?: string[];
+  data?: any;
 }
 
 export interface DashboardKPIs {

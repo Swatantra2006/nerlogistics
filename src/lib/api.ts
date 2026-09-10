@@ -287,29 +287,35 @@ export const api = {
     apiKey?: string,
     conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
   ): Promise<CopilotMessage> {
-    // 1. Try FastAPI backend if accessible
+    // 1. Try Next.js serverless route FIRST (works natively on Vercel and local dev)
+    try {
+      const res = await fetch('/api/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, apiKey, conversationHistory }),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      // If server returned a non-OK status, log it and try next
+      console.warn(`Copilot serverless route returned status ${res.status}`);
+    } catch (serverlessErr) {
+      console.warn('Next.js serverless copilot route error:', serverlessErr);
+    }
+
+    // 2. Try FastAPI backend if accessible (local dev or deployed backend)
     try {
       return await fetchWithTimeout<CopilotMessage>('/api/copilot/query', {
         method: 'POST',
-        body: JSON.stringify({ query, api_key: apiKey }),
-      }, 3500);
+        body: JSON.stringify({ query, api_key: apiKey, conversation_history: conversationHistory }),
+      }, 3000);
     } catch {
-      // 2. Try Next.js serverless route /api/copilot (works natively on Vercel and local)
-      try {
-        const res = await fetch('/api/copilot', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, apiKey, conversationHistory }),
-        });
-        if (res.ok) {
-          return await res.json();
-        }
-      } catch (serverlessErr) {
-        console.warn('Next.js serverless copilot route error:', serverlessErr);
-      }
-      // 3. Resilient fallback to local engine
-      return localProcessCopilot(query);
+      // Backend not available
     }
+
+    // 3. Resilient fallback to client-side grounded engine (no network required)
+    console.warn('All API routes failed. Using client-side grounded engine fallback.');
+    return localProcessCopilot(query);
   },
 
   // ===== SPATIAL QUERIES =====

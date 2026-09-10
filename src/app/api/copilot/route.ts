@@ -19,13 +19,17 @@ export async function POST(req: NextRequest) {
     // Step 1: Parse User Intent & Extract Exact Entities (Origin, Destination, Target)
     const parsed: ParsedQuery = RoutingService.parseRouteQuery(query);
 
-    // If follow-up question and destination/origin missing, inspect previous user message for context
-    if (parsed.intent === 'route_analysis' && (!parsed.origin || !parsed.destination) && history.length >= 2) {
-      const lastUserMsg = [...history].reverse().find(m => m.role === 'user');
-      if (lastUserMsg) {
-        const lastParsed = RoutingService.parseRouteQuery(lastUserMsg.content);
-        if (!parsed.origin && lastParsed.origin) parsed.origin = lastParsed.origin;
-        if (!parsed.destination && lastParsed.destination) parsed.destination = lastParsed.destination;
+    // If follow-up question and origin/destination missing, inspect previous user messages for context
+    const needsContext = ['route_analysis', 'risk_inquiry'].includes(parsed.intent);
+    if (needsContext && (!parsed.origin || !parsed.destination) && history.length >= 2) {
+      // Walk backward through user messages to find the most recent one with locations
+      for (let i = history.length - 1; i >= 0; i--) {
+        if (history[i].role === 'user') {
+          const lastParsed = RoutingService.parseRouteQuery(history[i].content);
+          if (!parsed.origin && lastParsed.origin) parsed.origin = lastParsed.origin;
+          if (!parsed.destination && lastParsed.destination) parsed.destination = lastParsed.destination;
+          if (parsed.origin && parsed.destination) break;
+        }
       }
     }
 
@@ -35,61 +39,88 @@ export async function POST(req: NextRequest) {
       groundedRoute = RoutingService.calculateRoute(parsed.origin, parsed.destination, parsed.priority);
     }
 
-    // Determine API Key
+    // Determine API Key — server-side only, never exposed to browser
     const geminiKey = userApiKey || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    const openAiKey = process.env.OPENAI_API_KEY;
 
     // -------------------------------------------------------------
-    // STEP 3: CALL GOOGLE GEMINI 1.5 FLASH WITH STRICT GROUNDED CONTEXT
+    // STEP 3: CALL GOOGLE GEMINI WITH STRICT GROUNDED CONTEXT
     // -------------------------------------------------------------
     if (geminiKey) {
       try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
 
-        // Construct strict system grounding prompt
-        let groundedContext = `You are the NER Logistics AI Copilot, an operational decision assistant for the 8 North Eastern States of India (Assam, Arunachal Pradesh, Manipur, Meghalaya, Mizoram, Nagaland, Sikkim, Tripura).\n\n`;
+        // Build system instruction with strict grounding rules
+        let systemInstruction = `You are the NER Logistics AI Copilot, an expert operational decision assistant for freight logistics across India's 8 North Eastern States (Assam, Arunachal Pradesh, Manipur, Meghalaya, Mizoram, Nagaland, Sikkim, Tripura).
 
+CRITICAL RULES YOU MUST ALWAYS FOLLOW:
+1. Always answer the user's CURRENT question. Never reuse a previous query's route or locations.
+2. NEVER substitute, alter, or confuse the user's requested origin or destination with unrelated cities.
+3. If the user asks about a specific route (e.g., Dibrugarh to Anini), your ENTIRE response must be about that exact route. Do NOT mention Guwahati→Silchar or any other route unless the user specifically asks.
+4. Use the verified structured data provided below whenever available. Do not invent distances, travel times, or highway numbers.
+5. If data is unavailable for a query, explicitly state that rather than fabricating information.
+6. Format responses with clear bold headers, bullet points, and structured sections.
+7. Keep responses focused, actionable, and logistics-grade professional.`;
+
+        // Add grounded route context if available
         if (groundedRoute) {
-          groundedContext += `STRICT ROUTE GROUNDING FOR THIS USER'S SPECIFIC QUESTION:
+          systemInstruction += `
+
+VERIFIED ROUTE DATA FOR THIS SPECIFIC QUERY (USE THIS DATA):
 - Origin: ${groundedRoute.origin.name} (${groundedRoute.origin.stateName})
 - Destination: ${groundedRoute.destination.name} (${groundedRoute.destination.stateName})
 - Total Road Distance: ${groundedRoute.totalDistanceKm} km
-- Estimated Travel Time: ~${groundedRoute.estimatedTimeHours} hours (light vehicle) / ~${groundedRoute.heavyTruckTimeHours} hours (commercial freight >12t)
+- Estimated Travel Time: ~${groundedRoute.estimatedTimeHours} hours (light vehicle) / ~${groundedRoute.heavyTruckTimeHours} hours (heavy freight >12t)
 - Highway Corridors: ${groundedRoute.highways.join(' → ')}
 - Waypoints: ${groundedRoute.waypoints.join(' ➔ ')}
 - Terrain Profile: ${groundedRoute.terrainSummary}
 - Composite Risk Score: ${groundedRoute.riskScore}/100 (${groundedRoute.riskLevel} Hazard Severity)
-- Specific Active Hazards: ${groundedRoute.hazards.join('; ')}
+- Active Hazards: ${groundedRoute.hazards.join('; ')}
 - Key Staging Checkpoints: ${groundedRoute.keyCheckpoints.join('; ')}
 
-MANDATORY RULES:
-1. You MUST answer specifically about the route from ${groundedRoute.origin.name} to ${groundedRoute.destination.name}.
-2. NEVER replace, alter, or confuse the origin or destination with Guwahati, Silchar, Tawang, or any other unrelated cities.
-3. Use the verified distance (${groundedRoute.totalDistanceKm} km) and highways (${groundedRoute.highways.join(', ')}) given above.
-4. Provide structured, actionable logistics guidance formatted with bold headers and bullet points.`;
+MANDATORY: Your response MUST be about the route from ${groundedRoute.origin.name} to ${groundedRoute.destination.name}. Use the exact distances and highways listed above.`;
         } else if (parsed.targetLocation) {
-          groundedContext += `GROUNDED TARGET ENTITY:
+          systemInstruction += `
+
+VERIFIED LOCATION DATA FOR THIS QUERY:
 - Location: ${parsed.targetLocation.name} (${parsed.targetLocation.stateName})
 - Terrain: ${parsed.targetLocation.terrain || 'Mountainous / Hilly'}
-- Answer specifically regarding ${parsed.targetLocation.name}. Do NOT substitute with another city.`;
-        } else {
-          groundedContext += `Answer the user's specific North Eastern Region logistics question. Do not hallucinate or use unrelated canned examples.`;
+- Elevation: ${parsed.targetLocation.elevation ? parsed.targetLocation.elevation + 'm' : 'High altitude'}
+
+MANDATORY: Your response must be specifically about ${parsed.targetLocation.name}. Do NOT substitute with another city.`;
+        } else if (parsed.targetState) {
+          systemInstruction += `
+
+TARGET STATE: ${parsed.targetState}
+Answer specifically about logistics infrastructure and operations in ${parsed.targetState}.`;
         }
 
+        // Build conversation contents — include recent history for context
+        const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+
+        // Add recent conversation history (last 3 turns max for context window efficiency)
+        const recentHistory = history.slice(-6); // last 3 pairs of user/assistant
+        for (const msg of recentHistory) {
+          contents.push({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }],
+          });
+        }
+
+        // Add current user query
+        contents.push({
+          role: 'user',
+          parts: [{ text: query }],
+        });
+
         const payload = {
-          contents: [
-            {
-              parts: [
-                {
-                  text: `${groundedContext}\n\nUser Question: ${query}`
-                }
-              ]
-            }
-          ],
+          systemInstruction: {
+            parts: [{ text: systemInstruction }],
+          },
+          contents,
           generationConfig: {
             temperature: 0.2,
-            maxOutputTokens: 900,
-          }
+            maxOutputTokens: 1200,
+          },
         };
 
         const response = await fetch(geminiUrl, {
@@ -110,8 +141,8 @@ MANDATORY RULES:
               { label: 'Est. Travel Time', value: `~${groundedRoute.estimatedTimeHours} hrs` },
               { label: 'Risk Factor', value: `${groundedRoute.riskScore}/100 (${groundedRoute.riskLevel})` },
             ] : [
-              { label: 'AI Engine', value: 'Gemini 1.5 Flash (Live)' },
-              { label: 'Grounding', value: 'NER Spatial Service' },
+              { label: 'AI Engine', value: 'Gemini 2.0 Flash (Live)' },
+              { label: 'Grounding', value: 'NER Spatial Database' },
             ];
 
             return NextResponse.json({
@@ -127,65 +158,17 @@ MANDATORY RULES:
           }
         } else {
           const errText = await response.text();
-          console.warn('Gemini API returned error, falling back to grounded routing service:', errText);
+          console.error('Gemini API error response:', response.status, errText);
         }
       } catch (geminiErr) {
-        console.warn('Gemini request failed, falling back to grounded routing service:', geminiErr);
+        console.error('Gemini API request failed:', geminiErr);
       }
     }
 
     // -------------------------------------------------------------
-    // STEP 4: CALL OPENAI IF CONFIGURED (ALTERNATIVE LLM)
-    // -------------------------------------------------------------
-    if (openAiKey) {
-      try {
-        const openAiUrl = 'https://api.openai.com/v1/chat/completions';
-        let promptSystem = `You are the NER Logistics AI Copilot. Always answer specifically for the user's requested North Eastern Region corridor without location substitution.\n`;
-        if (groundedRoute) {
-          promptSystem += `Verified Route: ${groundedRoute.origin.name} to ${groundedRoute.destination.name} (${groundedRoute.totalDistanceKm} km, via ${groundedRoute.highways.join(', ')}).`;
-        }
-
-        const response = await fetch(openAiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openAiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'system', content: promptSystem },
-              { role: 'user', content: query }
-            ],
-            temperature: 0.2,
-            max_tokens: 800,
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const reply = data?.choices?.[0]?.message?.content;
-          if (reply) {
-            return NextResponse.json({
-              role: 'assistant',
-              content: reply,
-              timestamp: new Date().toISOString(),
-              metrics: groundedRoute ? [
-                { label: 'Origin', value: groundedRoute.origin.name },
-                { label: 'Destination', value: groundedRoute.destination.name },
-                { label: 'Distance', value: `${groundedRoute.totalDistanceKm} km` },
-              ] : [{ label: 'AI Engine', value: 'OpenAI GPT-4o-mini' }],
-              recommendations: groundedRoute?.strategicRecommendations || ['Cross-reference live routes with Route Optimizer']
-            });
-          }
-        }
-      } catch (openAiErr) {
-        console.warn('OpenAI request failed:', openAiErr);
-      }
-    }
-
-    // -------------------------------------------------------------
-    // STEP 5: VERIFIED GROUNDED ENGINE (NO HALLUCINATION, NO CANNED GUWAHATI/SILCHAR)
+    // STEP 4: VERIFIED GROUNDED ENGINE (fallback when Gemini is unavailable)
+    // This engine uses the exact same RoutingService with Dijkstra pathfinding
+    // and NER location data — no hallucination, no canned responses.
     // -------------------------------------------------------------
     const groundedResponse = RoutingService.generateGroundedResponse(parsed, query);
     return NextResponse.json(groundedResponse);
@@ -195,8 +178,15 @@ MANDATORY RULES:
     return NextResponse.json(
       {
         role: 'assistant',
-        content: 'I could not process that logistics query. Please specify an origin and destination within the 8 North Eastern States.',
+        content: 'I encountered an error processing your logistics query. Please try again, or rephrase your question with specific locations in the North Eastern Region.',
         timestamp: new Date().toISOString(),
+        metrics: [
+          { label: 'Status', value: 'Error' },
+        ],
+        recommendations: [
+          'Try asking: "What is the route between Dibrugarh and Anini?"',
+          'Try asking: "How accessible is Aizawl?"',
+        ],
       },
       { status: 500 }
     );

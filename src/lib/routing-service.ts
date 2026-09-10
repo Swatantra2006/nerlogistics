@@ -186,7 +186,7 @@ export class RoutingService {
 
     // Determine Intent
     let intent: ParsedQuery['intent'] = 'general';
-    if (['route', 'path', 'way', 'travel', 'directions', 'reach', 'how to go', 'distance between', 'shortest way', 'better route', 'alternative route'].some(k => lower.includes(k))) {
+    if (['route', 'path', 'way', 'travel', 'directions', 'reach', 'how to go', 'distance between', 'shortest way', 'better route', 'alternative route', 'safest route', 'fastest route', 'what about'].some(k => lower.includes(k))) {
       intent = 'route_analysis';
     } else if (['risk', 'hazard', 'landslide', 'flood', 'danger', 'disruption', 'closure', 'safe'].some(k => lower.includes(k))) {
       intent = 'risk_inquiry';
@@ -194,6 +194,8 @@ export class RoutingService {
       intent = 'accessibility_inquiry';
     } else if (['hub', 'warehouse', 'depot', 'storage'].some(k => lower.includes(k))) {
       intent = 'hub_inquiry';
+    } else if (['tea', 'medicine', 'pharma', 'grain', 'fuel', 'petroleum', 'cement', 'perishable'].some(k => lower.includes(k))) {
+      intent = 'commodity_inquiry';
     }
 
     // Determine Priority

@@ -103,8 +103,9 @@ export default function CopilotPage() {
     setInput('');
     setIsProcessing(true);
 
-    // Extract recent conversation history (last 4 turns) for context preservation
-    const conversationHistory = updatedMessages.slice(-4).map(m => ({
+    // Extract recent conversation history (last 6 messages before current) for context preservation
+    // Exclude the current user message since it's sent separately as 'query'
+    const conversationHistory = messages.slice(-6).map(m => ({
       role: m.role,
       content: m.content,
     }));
@@ -153,7 +154,7 @@ export default function CopilotPage() {
               : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
           }`}>
             <span className={`w-2 h-2 rounded-full ${activeApiKey ? 'bg-amber-400' : 'bg-emerald-400'} animate-pulse`} />
-            <span>{activeApiKey ? 'Gemini 1.5 Flash (Live AI)' : 'NER Neural Engine (Active)'}</span>
+            <span>{activeApiKey ? 'Gemini 2.0 Flash (Live AI)' : 'NER Grounded Engine (Active)'}</span>
           </div>
 
           {/* AI Settings / Key Button */}

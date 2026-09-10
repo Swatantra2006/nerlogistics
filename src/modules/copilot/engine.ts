@@ -209,8 +209,8 @@ export function processQuery(query: string, userLocation?: { lat: number; lng: n
 
   // ACCESSIBILITY
   if (parsed.primaryIntent === 'accessibility') {
-    const targetDist = parsed.locations.find(l => l.district)?.district;
-    const fact = CopilotIntelligence.getAccessibilityFact(targetDist, parsed.sortOrder);
+    const targetLoc = parsed.locations[0];
+    const fact = CopilotIntelligence.getAccessibilityFact(targetLoc, parsed.sortOrder);
     return {
       role: 'assistant',
       content: fact.factText,
@@ -219,14 +219,14 @@ export function processQuery(query: string, userLocation?: { lat: number; lng: n
       recommendations: fact.recommendations,
       sources: fact.sources,
       intent: 'accessibility',
-      locations: targetDist ? [targetDist.name] : [],
+      locations: targetLoc ? [targetLoc.matchedName] : [],
     };
   }
 
   // DEMAND
   if (parsed.primaryIntent === 'demand') {
-    const targetDist = parsed.locations.find(l => l.district)?.district;
-    const fact = CopilotIntelligence.getDemandFact(targetDist, parsed.sortOrder === 'worst' ? 'lowest' : 'highest');
+    const targetLoc = parsed.locations[0];
+    const fact = CopilotIntelligence.getDemandFact(targetLoc, parsed.sortOrder === 'worst' ? 'lowest' : 'highest');
     return {
       role: 'assistant',
       content: fact.factText,
@@ -235,14 +235,14 @@ export function processQuery(query: string, userLocation?: { lat: number; lng: n
       recommendations: fact.recommendations,
       sources: fact.sources,
       intent: 'demand',
-      locations: targetDist ? [targetDist.name] : [],
+      locations: targetLoc ? [targetLoc.matchedName] : [],
     };
   }
 
   // RISK
   if (parsed.primaryIntent === 'risk') {
-    const targetDist = parsed.locations.find(l => l.district)?.district;
-    const fact = CopilotIntelligence.getRiskFact(targetDist);
+    const targetLoc = parsed.locations[0];
+    const fact = CopilotIntelligence.getRiskFact(targetLoc);
     return {
       role: 'assistant',
       content: fact.factText,
@@ -251,14 +251,14 @@ export function processQuery(query: string, userLocation?: { lat: number; lng: n
       recommendations: fact.recommendations,
       sources: fact.sources,
       intent: 'risk',
-      locations: targetDist ? [targetDist.name] : [],
+      locations: targetLoc ? [targetLoc.matchedName] : [],
     };
   }
 
   // INFRASTRUCTURE
   if (parsed.primaryIntent === 'infrastructure') {
-    const targetDist = parsed.locations.find(l => l.district)?.district;
-    const fact = CopilotIntelligence.getInfrastructureFact(targetDist);
+    const targetLoc = parsed.locations[0];
+    const fact = CopilotIntelligence.getInfrastructureFact(targetLoc);
     return {
       role: 'assistant',
       content: fact.factText,
@@ -267,7 +267,7 @@ export function processQuery(query: string, userLocation?: { lat: number; lng: n
       recommendations: fact.recommendations,
       sources: fact.sources,
       intent: 'infrastructure',
-      locations: targetDist ? [targetDist.name] : [],
+      locations: targetLoc ? [targetLoc.matchedName] : [],
     };
   }
 
@@ -277,7 +277,7 @@ export function processQuery(query: string, userLocation?: { lat: number; lng: n
     const lat = loc?.lat || userLocation?.lat || 26.14;
     const lng = loc?.lng || userLocation?.lng || 91.73;
     const name = loc?.matchedName || (userLocation ? 'Current Location' : 'Guwahati');
-    const fact = CopilotIntelligence.getHubFact(lat, lng, name);
+    const fact = CopilotIntelligence.getHubFact(lat, lng, name, loc?.isProxy ? loc.proxyNotice : undefined);
     return {
       role: 'assistant',
       content: fact.factText,
@@ -308,24 +308,8 @@ export function processQuery(query: string, userLocation?: { lat: number; lng: n
     }
   }
 
-  // SINGLE DISTRICT
-  if (parsed.locations.length === 1 && parsed.locations[0].district) {
-    const d = parsed.locations[0].district;
-    const fact = CopilotIntelligence.getAccessibilityFact(d);
-    return {
-      role: 'assistant',
-      content: fact.factText,
-      timestamp: new Date().toISOString(),
-      metrics: fact.metrics,
-      recommendations: fact.recommendations,
-      sources: fact.sources,
-      intent: 'district',
-      locations: [d.name],
-    };
-  }
-
   // ROUTE (Synchronous Dijkstra)
-  if (parsed.locations.length >= 2) {
+  if (parsed.primaryIntent === 'route' && parsed.locations.length >= 2) {
     const origin = parsed.locations[0];
     const dest = parsed.locations[1];
     return {
@@ -340,6 +324,22 @@ export function processQuery(query: string, userLocation?: { lat: number; lng: n
       sources: ['Route Optimization Engine (Dijkstra)'],
       intent: 'route',
       locations: [origin.matchedName, dest.matchedName],
+    };
+  }
+
+  // SINGLE DISTRICT OR STRATEGIC GEOGRAPHIC FEATURE (Passes, Valleys, Roads, Towns)
+  if (parsed.locations.length >= 1) {
+    const loc = parsed.locations[0];
+    const fact = CopilotIntelligence.getAccessibilityFact(loc);
+    return {
+      role: 'assistant',
+      content: fact.factText,
+      timestamp: new Date().toISOString(),
+      metrics: fact.metrics,
+      recommendations: fact.recommendations,
+      sources: fact.sources,
+      intent: loc.isProxy ? 'geographic_feature' : 'district',
+      locations: [loc.matchedName],
     };
   }
 

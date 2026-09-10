@@ -8,8 +8,9 @@ import {
 } from 'lucide-react';
 
 import Logo from '@/components/ui/Logo';
-
 import HeroSlideshow from '@/components/ui/HeroSlideshow';
+import { districts } from '@/data/ner-data';
+import { computeAccessibility } from '@/modules/accessibility/engine';
 
 const stats = [
   { value: '8', label: 'NE States Covered' },
@@ -214,18 +215,27 @@ export default function LandingPage() {
                 <Brain className="w-4 h-4 text-accent-400" />
                 <span className="text-sm font-semibold text-accent-400">AI Copilot Response</span>
               </div>
-              <div className="bg-surface-950/60 rounded-lg p-4 text-sm leading-relaxed text-surface-300">
-                <p className="mb-3">Based on the current logistics intelligence:</p>
-                <p className="mb-3"><strong className="text-white">Tawang</strong> has a low accessibility score of <strong className="text-rose-400">22/100</strong>.</p>
-                <p className="mb-2 text-surface-400">Primary factors:</p>
-                <ul className="list-disc ml-4 space-y-1 text-surface-400 mb-3">
-                  <li>Road connectivity: 28/100</li>
-                  <li>Zero rail connectivity</li>
-                  <li>520 km from nearest logistics hub</li>
-                  <li>High terrain-related risk (82/100)</li>
-                </ul>
-                <p className="text-primary-300 italic">💡 Recommendation: Prioritize alternate supply corridors and establish a regional logistics staging point.</p>
-              </div>
+              {(() => {
+                const tawang = districts.find(d => d.id === 'tawang');
+                const tawangAcc = tawang ? computeAccessibility(tawang).overallScore : 17;
+                const roadConn = tawang?.roadConnectivity ?? 28;
+                const hubDist = tawang?.nearestHubDistance ?? 520;
+                const risk = tawang?.riskScore ?? 82;
+                return (
+                  <div className="bg-surface-950/60 rounded-lg p-4 text-sm leading-relaxed text-surface-300">
+                    <p className="mb-3">Based on the current logistics intelligence:</p>
+                    <p className="mb-3"><strong className="text-white">Tawang</strong> has a low accessibility score of <strong className="text-rose-400">{tawangAcc}/100</strong>.</p>
+                    <p className="mb-2 text-surface-400">Primary factors:</p>
+                    <ul className="list-disc ml-4 space-y-1 text-surface-400 mb-3">
+                      <li>Road connectivity: {roadConn}/100</li>
+                      <li>Zero rail connectivity</li>
+                      <li>{hubDist} km from nearest logistics hub</li>
+                      <li>High terrain-related risk ({risk}/100)</li>
+                    </ul>
+                    <p className="text-primary-300 italic">💡 Recommendation: Prioritize alternate supply corridors and establish a regional logistics staging point.</p>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

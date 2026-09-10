@@ -286,6 +286,7 @@ export const graphNodes: GraphNode[] = [
   { id: 'roing', name: 'Roing', lat: 28.1400, lng: 95.8300, stateId: 'arunachal' },
   { id: 'tezu', name: 'Tezu', lat: 27.9100, lng: 96.1600, stateId: 'arunachal' },
   { id: 'ziro', name: 'Ziro', lat: 27.5300, lng: 93.8300, stateId: 'arunachal' },
+  { id: 'pelling', name: 'Pelling', lat: 27.3170, lng: 88.2330, stateId: 'sikkim' },
 ];
 
 export const graphEdges: GraphEdge[] = [
@@ -332,6 +333,8 @@ export const graphEdges: GraphEdge[] = [
 
   // Sikkim connections
   { from: 'siliguri', to: 'gangtok', distance: 114, time: 3.5, cost: 4.0, risk: 58, accessibility: 55, roadId: 'nh-10', roadName: 'NH-10', condition: 'fair', waypoints: [[26.7271, 88.3953], [27.0, 88.5], [27.34, 88.61]] },
+  { from: 'gangtok', to: 'pelling', distance: 125, time: 4.8, cost: 4.8, risk: 65, accessibility: 35, roadId: 'nh-510', roadName: 'NH-510 / State Highway (via Singtam, Ravangla & Legship)', condition: 'fair', waypoints: [[27.3389, 88.6065], [27.23, 88.50], [27.306, 88.363], [27.28, 88.25], [27.317, 88.233]] },
+  { from: 'siliguri', to: 'pelling', distance: 135, time: 5.2, cost: 4.8, risk: 62, accessibility: 38, roadId: 'nh-10', roadName: 'NH-10 → Melli → Jorethang → Legship → Pelling', condition: 'fair', waypoints: [[26.7271, 88.3953], [27.08, 88.45], [27.12, 88.30], [27.28, 88.25], [27.317, 88.233]] },
   { from: 'guwahati', to: 'siliguri', distance: 560, time: 9.5, cost: 3.5, risk: 35, accessibility: 72, roadId: 'nh-27', roadName: 'NH-27', condition: 'good', waypoints: [[26.1445, 91.7362], [26.4, 90.5], [26.5, 89.5], [26.73, 88.4]] },
 ];
 

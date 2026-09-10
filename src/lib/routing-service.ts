@@ -52,21 +52,28 @@ export interface GroundedRouteData {
 export const NER_LOCATIONS_MAP: Record<string, LocationEntity> = {
   // Assam
   'guwahati': { id: 'guwahati', name: 'Guwahati', stateId: 'assam', stateName: 'Assam', lat: 26.1445, lng: 91.7362, terrain: 'plain', elevation: 55 },
+  'kamrup': { id: 'guwahati', name: 'Kamrup Metropolitan (Guwahati)', stateId: 'assam', stateName: 'Assam', lat: 26.1445, lng: 91.7362, terrain: 'plain', elevation: 55 },
+  'kamrup metropolitan': { id: 'guwahati', name: 'Kamrup Metropolitan', stateId: 'assam', stateName: 'Assam', lat: 26.1445, lng: 91.7362, terrain: 'plain', elevation: 55 },
   'dibrugarh': { id: 'dibrugarh', name: 'Dibrugarh', stateId: 'assam', stateName: 'Assam', lat: 27.4728, lng: 94.9120, terrain: 'plain', elevation: 108 },
   'silchar': { id: 'silchar', name: 'Silchar', stateId: 'assam', stateName: 'Assam', lat: 24.8333, lng: 92.7789, terrain: 'plain', elevation: 30 },
   'cachar': { id: 'silchar', name: 'Silchar (Cachar)', stateId: 'assam', stateName: 'Assam', lat: 24.8333, lng: 92.7789, terrain: 'plain', elevation: 30 },
   'tinsukia': { id: 'tinsukia', name: 'Tinsukia', stateId: 'assam', stateName: 'Assam', lat: 27.4922, lng: 95.3547, terrain: 'plain', elevation: 116 },
   'jorhat': { id: 'jorhat', name: 'Jorhat', stateId: 'assam', stateName: 'Assam', lat: 26.7509, lng: 94.2037, terrain: 'plain', elevation: 86 },
   'tezpur': { id: 'tezpur', name: 'Tezpur', stateId: 'assam', stateName: 'Assam', lat: 26.6338, lng: 92.7840, terrain: 'plain', elevation: 85 },
+  'sonitpur': { id: 'tezpur', name: 'Sonitpur (Tezpur)', stateId: 'assam', stateName: 'Assam', lat: 26.7000, lng: 92.9700, terrain: 'plain', elevation: 85 },
   'nagaon': { id: 'nagaon', name: 'Nagaon', stateId: 'assam', stateName: 'Assam', lat: 26.3500, lng: 92.6840, terrain: 'plain', elevation: 60 },
   'bongaigaon': { id: 'bongaigaon', name: 'Bongaigaon', stateId: 'assam', stateName: 'Assam', lat: 26.5000, lng: 90.5500, terrain: 'plain', elevation: 54 },
   'barpeta': { id: 'barpeta', name: 'Barpeta', stateId: 'assam', stateName: 'Assam', lat: 26.3210, lng: 91.0050, terrain: 'riverine', elevation: 35 },
   'lumding': { id: 'lumding', name: 'Lumding', stateId: 'assam', stateName: 'Assam', lat: 25.7500, lng: 93.1700, terrain: 'plain', elevation: 125 },
   'sadiya': { id: 'sadiya', name: 'Sadiya', stateId: 'assam', stateName: 'Assam', lat: 27.8300, lng: 95.6600, terrain: 'riverine', elevation: 123 },
+  'dhola': { id: 'sadiya', name: 'Dhola', stateId: 'assam', stateName: 'Assam', lat: 27.7800, lng: 95.5800, terrain: 'plain', elevation: 120 },
 
   // Arunachal Pradesh
   'anini': { id: 'anini', name: 'Anini', stateId: 'arunachal', stateName: 'Arunachal Pradesh', lat: 28.7900, lng: 95.9000, terrain: 'mountainous', elevation: 1968, isDistrict: true },
   'dibang valley': { id: 'anini', name: 'Dibang Valley (Anini)', stateId: 'arunachal', stateName: 'Arunachal Pradesh', lat: 28.7900, lng: 95.9000, terrain: 'mountainous', elevation: 1968, isDistrict: true },
+  'dibang': { id: 'anini', name: 'Dibang Valley (Anini)', stateId: 'arunachal', stateName: 'Arunachal Pradesh', lat: 28.7900, lng: 95.9000, terrain: 'mountainous', elevation: 1968, isDistrict: true },
+  'hunli': { id: 'anini', name: 'Hunli (Anini Corridor)', stateId: 'arunachal', stateName: 'Arunachal Pradesh', lat: 28.3200, lng: 95.9600, terrain: 'mountainous', elevation: 1300 },
+  'mayodia': { id: 'anini', name: 'Mayodia Pass (Roing-Anini)', stateId: 'arunachal', stateName: 'Arunachal Pradesh', lat: 28.2300, lng: 95.9100, terrain: 'mountainous', elevation: 2655 },
   'roing': { id: 'roing', name: 'Roing', stateId: 'arunachal', stateName: 'Arunachal Pradesh', lat: 28.1400, lng: 95.8300, terrain: 'hilly', elevation: 390, isDistrict: true },
   'lower dibang': { id: 'roing', name: 'Lower Dibang Valley (Roing)', stateId: 'arunachal', stateName: 'Arunachal Pradesh', lat: 28.1400, lng: 95.8300, terrain: 'hilly', elevation: 390, isDistrict: true },
   'tezu': { id: 'tezu', name: 'Tezu', stateId: 'arunachal', stateName: 'Arunachal Pradesh', lat: 27.9100, lng: 96.1600, terrain: 'hilly', elevation: 210, isDistrict: true },
@@ -86,38 +93,67 @@ export const NER_LOCATIONS_MAP: Record<string, LocationEntity> = {
   // Meghalaya
   'shillong': { id: 'shillong', name: 'Shillong', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.5788, lng: 91.8933, terrain: 'hilly', elevation: 1496, isDistrict: true },
   'east khasi': { id: 'shillong', name: 'East Khasi Hills (Shillong)', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.5788, lng: 91.8933, terrain: 'hilly', elevation: 1496, isDistrict: true },
+  'east khasi hills': { id: 'shillong', name: 'East Khasi Hills', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.5788, lng: 91.8933, terrain: 'hilly', elevation: 1496, isDistrict: true },
   'tura': { id: 'tura', name: 'Tura', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.5200, lng: 90.2200, terrain: 'hilly', elevation: 380, isDistrict: true },
   'west garo': { id: 'tura', name: 'West Garo Hills (Tura)', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.5200, lng: 90.2200, terrain: 'hilly', elevation: 380, isDistrict: true },
+  'west garo hills': { id: 'tura', name: 'West Garo Hills', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.5200, lng: 90.2200, terrain: 'hilly', elevation: 380, isDistrict: true },
+  'south garo': { id: 'tura', name: 'South Garo Hills (Baghmara)', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.2800, lng: 90.6200, terrain: 'hilly', elevation: 450, isDistrict: true },
+  'baghmara': { id: 'tura', name: 'Baghmara', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.2800, lng: 90.6200, terrain: 'hilly', elevation: 450 },
+  'ri bhoi': { id: 'shillong', name: 'Ri-Bhoi (Nongpoh)', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.7700, lng: 91.8500, terrain: 'hilly', elevation: 800, isDistrict: true },
+  'ribhoi': { id: 'shillong', name: 'Ri-Bhoi', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.7700, lng: 91.8500, terrain: 'hilly', elevation: 800, isDistrict: true },
+  'nongpoh': { id: 'shillong', name: 'Nongpoh', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.9000, lng: 91.8800, terrain: 'hilly', elevation: 600 },
   'jowai': { id: 'shillong', name: 'Jowai', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.4500, lng: 92.2000, terrain: 'hilly', elevation: 1380 },
   'cherrapunji': { id: 'shillong', name: 'Cherrapunji (Sohra)', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.2700, lng: 91.7300, terrain: 'hilly', elevation: 1430 },
+  'sohra': { id: 'shillong', name: 'Sohra (Cherrapunji)', stateId: 'meghalaya', stateName: 'Meghalaya', lat: 25.2700, lng: 91.7300, terrain: 'hilly', elevation: 1430 },
 
   // Nagaland
   'kohima': { id: 'kohima', name: 'Kohima', stateId: 'nagaland', stateName: 'Nagaland', lat: 25.6747, lng: 94.1086, terrain: 'mountainous', elevation: 1444, isDistrict: true },
   'dimapur': { id: 'dimapur', name: 'Dimapur', stateId: 'nagaland', stateName: 'Nagaland', lat: 25.8973, lng: 93.7266, terrain: 'plain', elevation: 154, isDistrict: true },
   'mokokchung': { id: 'kohima', name: 'Mokokchung', stateId: 'nagaland', stateName: 'Nagaland', lat: 26.3200, lng: 94.5200, terrain: 'mountainous', elevation: 1325 },
   'mon': { id: 'dimapur', name: 'Mon', stateId: 'nagaland', stateName: 'Nagaland', lat: 26.6919, lng: 94.9130, terrain: 'mountainous', elevation: 900, isDistrict: true },
+  'tuensang': { id: 'dimapur', name: 'Tuensang', stateId: 'nagaland', stateName: 'Nagaland', lat: 26.2700, lng: 94.8300, terrain: 'mountainous', elevation: 1400, isDistrict: true },
+  'wokha': { id: 'kohima', name: 'Wokha', stateId: 'nagaland', stateName: 'Nagaland', lat: 26.1000, lng: 94.2700, terrain: 'mountainous', elevation: 1313 },
 
   // Manipur
   'imphal': { id: 'imphal', name: 'Imphal', stateId: 'manipur', stateName: 'Manipur', lat: 24.8074, lng: 93.9384, terrain: 'hilly', elevation: 786, isDistrict: true },
   'imphal west': { id: 'imphal', name: 'Imphal West', stateId: 'manipur', stateName: 'Manipur', lat: 24.8074, lng: 93.9384, terrain: 'hilly', elevation: 786, isDistrict: true },
+  'imphal east': { id: 'imphal', name: 'Imphal East', stateId: 'manipur', stateName: 'Manipur', lat: 24.8500, lng: 94.0500, terrain: 'hilly', elevation: 790, isDistrict: true },
   'churachandpur': { id: 'imphal', name: 'Churachandpur', stateId: 'manipur', stateName: 'Manipur', lat: 24.3340, lng: 93.6840, terrain: 'mountainous', elevation: 1500, isDistrict: true },
   'ukhrul': { id: 'imphal', name: 'Ukhrul', stateId: 'manipur', stateName: 'Manipur', lat: 25.1200, lng: 94.3600, terrain: 'mountainous', elevation: 1662, isDistrict: true },
   'moreh': { id: 'imphal', name: 'Moreh', stateId: 'manipur', stateName: 'Manipur', lat: 24.2400, lng: 94.3000, terrain: 'hilly', elevation: 228 },
+  'senapati': { id: 'imphal', name: 'Senapati', stateId: 'manipur', stateName: 'Manipur', lat: 25.2700, lng: 94.0200, terrain: 'mountainous', elevation: 1250 },
 
   // Mizoram
   'aizawl': { id: 'aizawl', name: 'Aizawl', stateId: 'mizoram', stateName: 'Mizoram', lat: 23.7271, lng: 92.7176, terrain: 'mountainous', elevation: 1132, isDistrict: true },
   'lunglei': { id: 'aizawl', name: 'Lunglei', stateId: 'mizoram', stateName: 'Mizoram', lat: 22.8800, lng: 92.7300, terrain: 'mountainous', elevation: 850, isDistrict: true },
   'champhai': { id: 'aizawl', name: 'Champhai', stateId: 'mizoram', stateName: 'Mizoram', lat: 23.4567, lng: 93.3280, terrain: 'mountainous', elevation: 1678, isDistrict: true },
+  'kolasib': { id: 'aizawl', name: 'Kolasib', stateId: 'mizoram', stateName: 'Mizoram', lat: 24.2200, lng: 92.6800, terrain: 'mountainous', elevation: 650 },
 
   // Sikkim
   'gangtok': { id: 'gangtok', name: 'Gangtok', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.3389, lng: 88.6065, terrain: 'mountainous', elevation: 1650, isDistrict: true },
-  'siliguri': { id: 'siliguri', name: 'Siliguri', stateId: 'sikkim', stateName: 'West Bengal (NER Gateway)', lat: 26.7271, lng: 88.3953, terrain: 'plain', elevation: 122 },
+  'east sikkim': { id: 'gangtok', name: 'East Sikkim (Gangtok)', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.3389, lng: 88.6065, terrain: 'mountainous', elevation: 1650, isDistrict: true },
+  'pelling': { id: 'pelling', name: 'Pelling', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.3170, lng: 88.2330, terrain: 'mountainous', elevation: 2150 },
+  'peling': { id: 'pelling', name: 'Pelling', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.3170, lng: 88.2330, terrain: 'mountainous', elevation: 2150 },
+  'gyalshing': { id: 'pelling', name: 'Gyalshing (West Sikkim)', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.2800, lng: 88.2500, terrain: 'mountainous', elevation: 1900 },
+  'ravangla': { id: 'namchi', name: 'Ravangla', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.3060, lng: 88.3630, terrain: 'mountainous', elevation: 2100 },
+  'singtam': { id: 'gangtok', name: 'Singtam', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.2300, lng: 88.5000, terrain: 'hilly', elevation: 400 },
+  'north sikkim': { id: 'gangtok', name: 'North Sikkim (Mangan)', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.8500, lng: 88.5500, terrain: 'mountainous', elevation: 4500, isDistrict: true },
+  'mangan': { id: 'gangtok', name: 'Mangan', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.5000, lng: 88.5300, terrain: 'mountainous', elevation: 1200 },
+  'south sikkim': { id: 'gangtok', name: 'South Sikkim (Namchi)', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.1300, lng: 88.4100, terrain: 'mountainous', elevation: 1500, isDistrict: true },
   'namchi': { id: 'gangtok', name: 'Namchi', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.1700, lng: 88.3500, terrain: 'mountainous', elevation: 1315 },
+  'west sikkim': { id: 'pelling', name: 'West Sikkim (Geyzing/Pelling)', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.2000, lng: 88.2500, terrain: 'mountainous', elevation: 2200, isDistrict: true },
+  'geyzing': { id: 'pelling', name: 'Geyzing', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.2800, lng: 88.2500, terrain: 'mountainous', elevation: 1900 },
+  'siliguri': { id: 'siliguri', name: 'Siliguri', stateId: 'sikkim', stateName: 'West Bengal (NER Gateway)', lat: 26.7271, lng: 88.3953, terrain: 'plain', elevation: 122 },
   'rangpo': { id: 'gangtok', name: 'Rangpo', stateId: 'sikkim', stateName: 'Sikkim', lat: 27.1800, lng: 88.5300, terrain: 'hilly', elevation: 330 },
 
   // Tripura
   'agartala': { id: 'agartala', name: 'Agartala', stateId: 'tripura', stateName: 'Tripura', lat: 23.8315, lng: 91.2868, terrain: 'plain', elevation: 16, isDistrict: true },
+  'west tripura': { id: 'agartala', name: 'West Tripura (Agartala)', stateId: 'tripura', stateName: 'Tripura', lat: 23.8315, lng: 91.2868, terrain: 'plain', elevation: 16, isDistrict: true },
+  'dhalai': { id: 'agartala', name: 'Dhalai (Ambassa)', stateId: 'tripura', stateName: 'Tripura', lat: 23.8400, lng: 91.9800, terrain: 'hilly', elevation: 100, isDistrict: true },
+  'ambassa': { id: 'agartala', name: 'Ambassa', stateId: 'tripura', stateName: 'Tripura', lat: 23.9200, lng: 91.8500, terrain: 'plain', elevation: 50 },
   'dharmanagar': { id: 'agartala', name: 'Dharmanagar', stateId: 'tripura', stateName: 'Tripura', lat: 24.3800, lng: 92.1700, terrain: 'plain', elevation: 25 },
+  'north tripura': { id: 'agartala', name: 'North Tripura', stateId: 'tripura', stateName: 'Tripura', lat: 24.3200, lng: 92.0200, terrain: 'hilly', elevation: 55, isDistrict: true },
+  'udaipur': { id: 'agartala', name: 'South Tripura (Udaipur)', stateId: 'tripura', stateName: 'Tripura', lat: 23.5300, lng: 91.4800, terrain: 'plain', elevation: 35 },
 };
 
 export class RoutingService {
@@ -126,23 +162,31 @@ export class RoutingService {
    */
   static geocode(input: string): LocationEntity | undefined {
     if (!input) return undefined;
-    const clean = input.trim().toLowerCase().replace(/[^\w\s]/g, '').trim();
+    let clean = input.trim().toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // Strip common conversational filler prefixes/suffixes
+    clean = clean.replace(/^(what about|how about|what is|how is|how can i|route|path|from|to|between|near|travel to|reach|go to)\s+/i, '').trim();
+    clean = clean.replace(/\s+(route|corridor|highway|road)$/i, '').trim();
 
     // 1. Direct key match
     if (NER_LOCATIONS_MAP[clean]) {
       return NER_LOCATIONS_MAP[clean];
     }
 
-    // 2. Partial substring search
-    const keys = Object.keys(NER_LOCATIONS_MAP);
+    // 2. Word boundary / substring search in sorted keys (longest first)
+    const keys = Object.keys(NER_LOCATIONS_MAP).sort((a, b) => b.length - a.length);
     for (const k of keys) {
-      if (clean === k || clean.startsWith(k) || k.startsWith(clean)) {
+      if (clean === k || new RegExp(`\\b${k}\\b`, 'i').test(clean) || clean.startsWith(k) || k.startsWith(clean)) {
         return NER_LOCATIONS_MAP[k];
       }
     }
 
     // 3. Match against GraphNode names
-    const node = graphNodes.find(n => n.name.toLowerCase() === clean || n.id.toLowerCase() === clean);
+    const node = graphNodes.find(n => 
+      n.name.toLowerCase() === clean || 
+      n.id.toLowerCase() === clean || 
+      new RegExp(`\\b${n.name.toLowerCase()}\\b`, 'i').test(clean)
+    );
     if (node) {
       return {
         id: node.id,
@@ -155,7 +199,12 @@ export class RoutingService {
     }
 
     // 4. Match against District names
-    const dist = districts.find(d => d.name.toLowerCase().includes(clean) || clean.includes(d.name.toLowerCase()));
+    const dist = districts.find(d => 
+      d.name.toLowerCase() === clean ||
+      clean.includes(d.name.toLowerCase()) || 
+      d.name.toLowerCase().includes(clean) ||
+      new RegExp(`\\b${d.name.toLowerCase()}\\b`, 'i').test(clean)
+    );
     if (dist) {
       return {
         id: dist.id,
@@ -209,36 +258,62 @@ export class RoutingService {
     let destStr: string | undefined;
 
     // Pattern 1: "between X and Y"
-    const betweenMatch = lower.match(/between\s+([a-z\s\-]+?)\s+and\s+([a-z\s\-]+?)(?:\?|$|\.|\s+via|\s+route|\s+corridor|\s+for|\s+with)/i);
+    const betweenMatch = lower.match(/(?:between|connecting)\s+([a-z\s\-]+?)\s+and\s+([a-z\s\-]+?)(?:\?|$|\.|\s+via|\s+route|\s+corridor|\s+for|\s+with)/i);
     if (betweenMatch) {
       originStr = betweenMatch[1].trim();
       destStr = betweenMatch[2].trim();
     }
 
-    // Pattern 2: "from X to Y"
+    // Pattern 2: "how accessible is X from Y" or "accessibility of X from Y"
     if (!originStr || !destStr) {
-      const fromToMatch = lower.match(/from\s+([a-z\s\-]+?)\s+to\s+([a-z\s\-]+?)(?:\?|$|\.|\s+via|\s+route|\s+corridor|\s+by|\s+using)/i);
+      const accessFromMatch = lower.match(/(?:how\s+accessible\s+is|accessibility\s+of)\s+([a-z\s\-]+?)\s+from\s+([a-z\s\-]+?)(?:\?|$|\.)/i);
+      if (accessFromMatch) {
+        destStr = accessFromMatch[1].trim();
+        originStr = accessFromMatch[2].trim();
+      }
+    }
+
+    // Pattern 3: "from X to Y" (including "what about", "which route is safer from X to Y")
+    if (!originStr || !destStr) {
+      const fromToMatch = lower.match(/(?:from)\s+([a-z\s\-]+?)\s+to\s+([a-z\s\-]+?)(?:\?|$|\.|\s+via|\s+route|\s+corridor|\s+by|\s+using)/i);
       if (fromToMatch) {
         originStr = fromToMatch[1].trim();
         destStr = fromToMatch[2].trim();
       }
     }
 
-    // Pattern 3: "reach Y from X" or "to Y from X"
+    // Pattern 4: "reach Y from X" or "to Y from X"
     if (!originStr || !destStr) {
-      const reachMatch = lower.match(/(?:reach|to|travel\s+to|connect)\s+([a-z\s\-]+?)\s+from\s+([a-z\s\-]+?)(?:\?|$|\.)/i);
+      const reachMatch = lower.match(/(?:reach|travel\s+to|connect)\s+([a-z\s\-]+?)\s+from\s+([a-z\s\-]+?)(?:\?|$|\.)/i);
       if (reachMatch) {
         destStr = reachMatch[1].trim();
         originStr = reachMatch[2].trim();
       }
     }
 
-    // Pattern 4: "X to Y route"
+    // Pattern 5: "what about X to Y" or "how about X to Y"
+    if (!originStr || !destStr) {
+      const whatAboutMatch = lower.match(/(?:what\s+about|how\s+about)\s+([a-z\s\-]+?)\s+(?:to|->|→)\s+([a-z\s\-]+?)(?:\?|$|\.)/i);
+      if (whatAboutMatch) {
+        originStr = whatAboutMatch[1].trim();
+        destStr = whatAboutMatch[2].trim();
+      }
+    }
+
+    // Pattern 6: "X to Y route" or "X to Y"
     if (!originStr || !destStr) {
       const directMatch = lower.match(/([a-z\s\-]+?)\s+(?:to|->|→)\s+([a-z\s\-]+?)(?:\s+route|\s+corridor|\?|$|\.)/i);
       if (directMatch) {
         originStr = directMatch[1].trim();
         destStr = directMatch[2].trim();
+      }
+    }
+
+    // Pattern 7: Single target (e.g. "route to Anini" or "how to reach Tawang")
+    if (!destStr) {
+      const singleDestMatch = lower.match(/(?:route\s+to|directions\s+to|how\s+to\s+reach|how\s+can\s+i\s+reach|reach|travel\s+to)\s+([a-z\s\-]+?)(?:\?|$|\.)/i);
+      if (singleDestMatch) {
+        destStr = singleDestMatch[1].trim();
       }
     }
 
@@ -276,7 +351,7 @@ export class RoutingService {
     }
 
     // Single target location (for accessibility/hub questions)
-    const targetLocation = foundEntities[0];
+    const targetLocation = destination || origin || foundEntities[0];
 
     // Target state
     let targetState: string | undefined;
@@ -343,6 +418,13 @@ export class RoutingService {
         if (highways.some(h => h.includes('10'))) {
           hazards.push('Teesta river valley rockfalls and pre-monsoon road subsidence (29th Mile zone)');
           checkpoints.push('Rangpo multi-modal checkpost');
+        }
+        if (highways.some(h => h.includes('510') || h.includes('Pelling') || h.includes('Legship'))) {
+          hazards.push('Steep Himalayan mountain curves, evening fog at Ravangla (2,100m) and Pelling (2,150m)');
+          hazards.push('Seasonal slope instability and mud seepage near Legship / Rangit River basin');
+          checkpoints.push('Singtam junction staging post');
+          checkpoints.push('Ravangla checkpoint & brake cooling bay');
+          checkpoints.push('Gyalshing district transshipment hub');
         }
         if (highways.some(h => h.includes('6') || h.includes('Sonapur'))) {
           hazards.push('Sonapur tunnel flash mudslides and heavy rainfall belt in Meghalaya plateau');
@@ -534,6 +616,45 @@ ${route.strategicRecommendations.map(r => `• ✅ ${r}`).join('\n')}`;
           { label: 'Risk Factor', value: `${route.riskScore}/100 (${route.riskLevel})` },
         ],
         recommendations: route.strategicRecommendations,
+      };
+    }
+
+    // Handle Route Queries with missing endpoints / ambiguous locations
+    if (parsed.intent === 'route_analysis') {
+      if (parsed.origin && !parsed.destination) {
+        return {
+          role: 'assistant',
+          content: `Please specify a destination to calculate the route from **${parsed.origin.name}**.\n\n*For example: "What is the route from ${parsed.origin.name} to Anini?" or "What is the route from ${parsed.origin.name} to Silchar?"*`,
+          timestamp: now.toISOString(),
+          metrics: [{ label: 'Origin', value: parsed.origin.name }, { label: 'Destination', value: 'Required' }],
+          recommendations: [
+            `Try: "What is the route from ${parsed.origin.name} to Anini?"`,
+            `Try: "What is the route from ${parsed.origin.name} to Guwahati?"`
+          ]
+        };
+      }
+      if (!parsed.origin && parsed.destination) {
+        return {
+          role: 'assistant',
+          content: `Please specify an origin location to calculate the route to **${parsed.destination.name}**.\n\n*For example: "What is the route between Dibrugarh and ${parsed.destination.name}?" or "What is the route from Guwahati to ${parsed.destination.name}?"*`,
+          timestamp: now.toISOString(),
+          metrics: [{ label: 'Origin', value: 'Required' }, { label: 'Destination', value: parsed.destination.name }],
+          recommendations: [
+            `Try: "What is the route between Dibrugarh and ${parsed.destination.name}?"`,
+            `Try: "What is the route from Guwahati to ${parsed.destination.name}?"`
+          ]
+        };
+      }
+      return {
+        role: 'assistant',
+        content: `I don't have verified route data for this origin and destination yet. Please specify both an origin and destination within India's 8 North Eastern States.\n\n*For example:*\n• *"What is the route between Dibrugarh and Anini?"*\n• *"What is the route from Guwahati to Silchar?"*\n• *"How can I reach Tawang from Guwahati?"*`,
+        timestamp: now.toISOString(),
+        metrics: [{ label: 'Status', value: 'Endpoints Needed' }],
+        recommendations: [
+          'Try: "What is the route between Dibrugarh and Anini?"',
+          'Try: "What is the route from Guwahati to Silchar?"',
+          'Try: "What are the risks between Imphal and Kohima?"'
+        ]
       };
     }
 

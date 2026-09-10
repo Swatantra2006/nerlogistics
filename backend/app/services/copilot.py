@@ -33,7 +33,14 @@ def parse_query_intent(query: str, districts: List[District], states: List[State
     matched_state = None
 
     for d in districts:
-        if d.name.lower() in lower or d.id.lower() in lower:
+        d_name_clean = d.name.lower()
+        aliases = [d_name_clean, d.id.lower()]
+        if "(" in d_name_clean and ")" in d_name_clean:
+            inner = d_name_clean[d_name_clean.find("(")+1 : d_name_clean.find(")")].strip()
+            aliases.append(inner)
+            main_part = d_name_clean[:d_name_clean.find("(")].strip()
+            aliases.append(main_part)
+        if any(a in lower for a in aliases if len(a) >= 3):
             entities.append(d.name)
             if not matched_district:
                 matched_district = d
@@ -745,7 +752,7 @@ def try_gemini_query(query: str, db: Session, user_api_key: Optional[str] = None
         return None
 
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
         
         system_context = (
             "You are the NER Logistics AI Copilot, an expert decision assistant for freight logistics across India's 8 North Eastern States "
@@ -757,23 +764,28 @@ def try_gemini_query(query: str, db: Session, user_api_key: Optional[str] = None
         )
 
         payload = {
+            "systemInstruction": {
+                "parts": [{"text": system_context}]
+            },
             "contents": [
                 {
-                    "parts": [
-                        {"text": f"{system_context}\n\nUser Question: {query}"}
-                    ]
+                    "role": "user",
+                    "parts": [{"text": query}]
                 }
             ],
             "generationConfig": {
-                "temperature": 0.35,
-                "maxOutputTokens": 850,
+                "temperature": 0.2,
+                "maxOutputTokens": 1000,
             }
         }
 
         req = urllib.request.Request(
             url,
             data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key
+            }
         )
         with urllib.request.urlopen(req, timeout=10) as response:
             res_data = json.loads(response.read().decode("utf-8"))
@@ -784,7 +796,7 @@ def try_gemini_query(query: str, db: Session, user_api_key: Optional[str] = None
                 content=candidate,
                 timestamp=datetime.now().isoformat(),
                 metrics=[
-                    MetricItem(label="AI Engine", value="Gemini 1.5 Flash"),
+                    MetricItem(label="AI Engine", value="Gemini 2.0 Flash"),
                     MetricItem(label="Platform Data", value="Real-Time Synced"),
                 ],
                 recommendations=[
